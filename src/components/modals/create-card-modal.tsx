@@ -60,6 +60,8 @@ export function CreateCardModal() {
 
   const [formData, setFormData] = useState({
     title: '',
+    email: '',
+    phoneNumber: '',
     amount: '50',
   });
 
@@ -140,6 +142,8 @@ export function CreateCardModal() {
         body: JSON.stringify({
           type: 'card_creation',
           cardTitle: formData.title,
+          email: formData.email,
+          phoneNumber: formData.phoneNumber,
           topUpAmount: parseFloat(formData.amount),
         }),
       });
@@ -356,13 +360,43 @@ export function CreateCardModal() {
               {/* Card Title */}
               <div>
                 <label className="block text-sm font-medium text-gray-400 mb-2">
-                  Card Name
+                  Card Title
                 </label>
                 <input
                   type="text"
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                   placeholder="My Shopping Card"
+                  required
+                  className="w-full h-11 px-4 rounded-xl bg-gray-800 border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500 transition-all"
+                />
+              </div>
+
+              {/* Email */}
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-2">
+                  Email Address
+                </label>
+                <input
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  placeholder="user@example.com"
+                  required
+                  className="w-full h-11 px-4 rounded-xl bg-gray-800 border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500 transition-all"
+                />
+              </div>
+
+              {/* Phone Number */}
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-2">
+                  Phone Number
+                </label>
+                <input
+                  type="tel"
+                  value={formData.phoneNumber}
+                  onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
+                  placeholder="+1234567890"
                   required
                   className="w-full h-11 px-4 rounded-xl bg-gray-800 border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500 transition-all"
                 />
@@ -418,10 +452,10 @@ export function CreateCardModal() {
               {/* Submit */}
               <button
                 type="submit"
-                disabled={loading || !formData.title}
+                disabled={loading || !formData.title || !formData.email || !formData.phoneNumber}
                 className={cn(
                   'w-full h-11 rounded-xl bg-gradient-to-r from-violet-500 to-purple-600 text-white font-medium transition-all flex items-center justify-center gap-2',
-                  (loading || !formData.title)
+                  (loading || !formData.title || !formData.email || !formData.phoneNumber)
                     ? 'opacity-50 cursor-not-allowed'
                     : 'hover:from-violet-600 hover:to-purple-700 shadow-lg shadow-violet-500/25'
                 )}

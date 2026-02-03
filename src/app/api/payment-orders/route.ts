@@ -8,7 +8,7 @@ export async function POST(request: NextRequest) {
   try {
     const user = await requireAuth(request);
     const body = await request.json();
-    const { type, cardTitle, topUpAmount, cardId } = body;
+    const { type, cardTitle, email, phoneNumber, topUpAmount, cardId } = body;
 
     // Get settings or create defaults
     let settings = await prisma.settings.findUnique({
@@ -46,6 +46,20 @@ export async function POST(request: NextRequest) {
       if (!cardTitle) {
         return NextResponse.json(
           { error: 'Card title is required' },
+          { status: 400 }
+        );
+      }
+
+      if (!email) {
+        return NextResponse.json(
+          { error: 'Email is required' },
+          { status: 400 }
+        );
+      }
+
+      if (!phoneNumber) {
+        return NextResponse.json(
+          { error: 'Phone number is required' },
           { status: 400 }
         );
       }
@@ -143,6 +157,8 @@ export async function POST(request: NextRequest) {
         amountSol,
         solPrice,
         cardTitle: type === 'card_creation' ? cardTitle : null,
+        email: type === 'card_creation' ? email : null,
+        phoneNumber: type === 'card_creation' ? phoneNumber : null,
         topUpAmount: finalTopUpAmount,
         cardId: type === 'card_topup' ? cardId : null,
         cardFee,

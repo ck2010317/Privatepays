@@ -178,6 +178,8 @@ model PaymentOrder {
   
   // Card creation details
   cardTitle       String?
+  email           String?  // User email for card creation
+  phoneNumber     String?  // User phone for card creation
   topUpAmount     Float?   // Initial top-up amount for new card
   
   // For top-up orders
