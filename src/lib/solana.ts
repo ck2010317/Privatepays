@@ -69,7 +69,7 @@ export async function getRecentTransactions(
           transactions.push({
             signature: sig.signature,
             slot: sig.slot,
-            blockTime: sig.blockTime,
+            blockTime: sig.blockTime ?? null,
             amount: balanceChange,
             from: sender,
             to: walletAddress,
