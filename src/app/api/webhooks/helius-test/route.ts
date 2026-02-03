@@ -46,13 +46,9 @@ export async function POST(request: NextRequest) {
     // Try to find matching verification order
     const verificationOrder = await prisma.paymentOrder.findFirst({
       where: {
-        status: 'pending',
+        status: { in: ['pending', 'failed'] }, // Also allow re-verifying failed orders
         isTokenVerification: true,
         amountUsd: 5, // Standard verification fee is $5
-        // Order must not be expired
-        expiresAt: {
-          gte: new Date(),
-        },
       },
       orderBy: { createdAt: 'desc' },
     });
