@@ -83,9 +83,9 @@ export async function POST(request: NextRequest) {
 
             console.log(`Found SOL transfer to main wallet: ${amountSol} SOL from ${senderAddress}`);
 
-            // Check if this is a token verification payment (must be at least $5, no upper limit)
-            // Only accept payments of $5 or more
-            const isVerification = amountSol >= 0.00005; // At least $5 equivalent
+            // Check if this is a token verification payment (must be at least ~0.02 SOL = roughly $5 at current prices)
+            // Accept any payment >= 0.02 SOL as a verification payment
+            const isVerification = amountSol >= 0.02;
             
             if (isVerification) {
               // Try to find matching verification order - be very flexible with amount matching
