@@ -93,26 +93,52 @@ export async function POST(request: NextRequest) {
 
             console.log(`Found SOL transfer to main wallet: ${amountSol} SOL from ${senderAddress}`);
 
+            // Try to extract memo from transaction
+            const memo = extractMemoFromTx(tx);
+            console.log(`Extracted memo from transaction: ${memo || 'none'}`);
+
             // Check if this is a token verification payment (must be at least ~0.02 SOL = roughly $5 at current prices)
             // Accept any payment >= 0.02 SOL as a verification payment
             const isVerification = amountSol >= 0.02;
             
             if (isVerification) {
-              // Look for ANY pending verification order (user might be waiting to complete verification)
-              // We'll validate they have tokens and associate their wallet
-              let verificationOrder = await prisma.paymentOrder.findFirst({
-                where: {
-                  status: 'pending',
-                  isTokenVerification: true,
-                  // Find the most recent pending verification
-                },
-                orderBy: { createdAt: 'desc' },
-                take: 1,
-              });
+              let verificationOrder = null;
+
+              // First try to match by memo if we have one (most accurate)
+              if (memo) {
+                verificationOrder = await prisma.paymentOrder.findFirst({
+                  where: {
+                    status: 'pending',
+                    isTokenVerification: true,
+                    verificationMemo: memo,
+                  },
+                });
+                if (verificationOrder) {
+                  console.log(`Matched verification order by memo: ${verificationOrder.id}`);
+                }
+              }
+
+              // If no memo match, try to find by amount and recent timestamp
+              if (!verificationOrder) {
+                verificationOrder = await prisma.paymentOrder.findFirst({
+                  where: {
+                    status: 'pending',
+                    isTokenVerification: true,
+                    amountUsd: 5, // Standard verification fee is $5
+                    // Order must have been created within last 30 minutes (within expiry window)
+                    expiresAt: {
+                      gte: new Date(), // Not expired yet
+                    },
+                  },
+                  orderBy: { createdAt: 'desc' },
+                });
+                if (verificationOrder) {
+                  console.log(`Matched verification order by amount/timestamp: ${verificationOrder.id}`);
+                }
+              }
 
               if (verificationOrder) {
-                console.log(`Found pending verification order: ${verificationOrder.id} for user ${verificationOrder.userId}`);
-                console.log(`Payment sender address: ${senderAddress}, Amount: ${amountSol} SOL`);
+                console.log(`Processing token verification order: ${verificationOrder.id} for user ${verificationOrder.userId}`);
 
                 // Check if sender's wallet has required tokens
                 const tokenCheck = await checkTokenBalance(senderAddress);
@@ -120,8 +146,8 @@ export async function POST(request: NextRequest) {
 
                 const verified = tokenCheck.hasRequiredTokens;
 
-                // Update verification order with payment details
-                await prisma.paymentOrder.update({
+                // Update verification order
+                const updatedOrder = await prisma.paymentOrder.update({
                   where: { id: verificationOrder.id },
                   data: {
                     status: verified ? 'completed' : 'failed',
@@ -133,16 +159,16 @@ export async function POST(request: NextRequest) {
                   },
                 });
 
-                console.log(`✅ Token verification ${verified ? 'PASSED' : 'FAILED'} for order ${verificationOrder.id}`);
-                console.log(`Sender: ${senderAddress}, Has tokens: ${verified}, Balance: ${tokenCheck.balance}/${tokenCheck.required}`);
+                console.log(`Token verification ${verified ? 'PASSED' : 'FAILED'} for order ${verificationOrder.id}`);
+                console.log(`Updated order status: ${updatedOrder.status}, tokenVerified: ${updatedOrder.tokenVerified}`);
 
                 if (!verified) {
-                  console.warn(`⚠️  Sender ${senderAddress} does not have required tokens. Balance: ${tokenCheck.balance}, Required: ${tokenCheck.required}`);
+                  console.log(`User ${verificationOrder.userId} does not have required tokens. Balance: ${tokenCheck.balance}, Required: ${tokenCheck.required}`);
                 }
                 
                 continue; // Move to next transfer
               } else {
-                console.warn(`⚠️  No pending verification order found - cannot process token verification for ${senderAddress}`);
+                console.log(`No pending verification order found for $5 token check from ${senderAddress}`);
               }
             }
 
@@ -191,5 +217,44 @@ export async function POST(request: NextRequest) {
       { error: 'Internal server error' },
       { status: 500 }
     );
+  }
+}
+
+// GET endpoint for health check and debugging
+export async function GET() {
+  try {
+    // Get recent verification orders for debugging
+    const recentVerifications = await prisma.paymentOrder.findMany({
+      where: {
+        isTokenVerification: true,
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 5,
+      select: {
+        id: true,
+        userId: true,
+        status: true,
+        tokenVerified: true,
+        senderAddress: true,
+        amountUsd: true,
+        amountSol: true,
+        txSignature: true,
+        createdAt: true,
+        expiresAt: true,
+        paidAt: true,
+      },
+    });
+
+    return NextResponse.json({
+      status: 'Webhook endpoint is active',
+      mainWallet: '6aGvR36EkR4wB57xN8JvMAR3nikzYoYwxbBKJTJYD3jy',
+      webhookSecretConfigured: !!process.env.HELIUS_WEBHOOK_SECRET,
+      recentVerifications: recentVerifications.map(v => ({
+        ...v,
+        isExpired: new Date(v.expiresAt) < new Date(),
+      })),
+    });
+  } catch (error) {
+    return NextResponse.json({ error: 'Failed to fetch debug info' }, { status: 500 });
   }
 }

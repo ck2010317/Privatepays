@@ -167,20 +167,28 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Determine verification result
+    const isCompleted = order.status === 'completed';
+    const isVerified = isCompleted && order.tokenVerified === true;
+    const isFailed = order.status === 'failed' || (isCompleted && !order.tokenVerified);
+
     return NextResponse.json({
       orderId: order.id,
       status: order.status,
+      verified: isVerified, // true if fully verified and completed
       tokenVerified: order.tokenVerified,
       senderAddress: order.senderAddress,
       createdAt: order.createdAt,
       expiresAt: order.expiresAt,
       message: 
-        order.status === 'completed' && order.tokenVerified 
+        isVerified
           ? '✅ Token verification successful! You can now create a card.'
           : order.status === 'pending'
           ? '⏳ Waiting for payment confirmation...'
           : order.status === 'expired'
           ? '❌ Verification expired. Please try again.'
+          : isFailed
+          ? '❌ Verification failed. You do not have enough tokens.'
           : '❌ Verification failed. Please check your wallet and try again.',
     });
   } catch (error) {

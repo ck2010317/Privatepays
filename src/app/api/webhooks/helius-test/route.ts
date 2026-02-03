@@ -48,13 +48,35 @@ export async function POST(request: NextRequest) {
       where: {
         status: 'pending',
         isTokenVerification: true,
+        amountUsd: 5, // Standard verification fee is $5
+        // Order must not be expired
+        expiresAt: {
+          gte: new Date(),
+        },
       },
       orderBy: { createdAt: 'desc' },
     });
 
     if (!verificationOrder) {
+      const allVerifications = await prisma.paymentOrder.findMany({
+        where: {
+          isTokenVerification: true,
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 5,
+      });
+
       return NextResponse.json({
-        error: 'No pending verification order found in database',
+        error: 'No pending, non-expired verification order found in database',
+        debugInfo: {
+          recentVerifications: allVerifications.map(v => ({
+            id: v.id,
+            status: v.status,
+            expiresAt: v.expiresAt,
+            isExpired: v.expiresAt < new Date(),
+            amountUsd: v.amountUsd,
+          })),
+        },
       }, { status: 404 });
     }
 

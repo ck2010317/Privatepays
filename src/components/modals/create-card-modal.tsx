@@ -196,12 +196,14 @@ export function CreateCardModal() {
         const res = await fetch(`/api/verify-token?orderId=${verificationOrder.id}`);
         const data = await res.json();
 
-        if (data.verified === true && data.tokenVerified === true) {
+        console.log('Verification status check:', data);
+
+        if (data.verified === true) {
           setTokenVerified(true);
           setStep('form');
           setVerificationOrder(null);
           setVerificationInfo(null);
-        } else if (data.verified === false) {
+        } else if (data.status === 'failed' || (data.status === 'completed' && !data.tokenVerified)) {
           setError('Token verification failed. You do not have enough tokens. Please check your wallet.');
         }
       } catch (err) {
