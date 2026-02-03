@@ -70,7 +70,7 @@ function StatCard({ title, value, subtitle, icon: Icon, iconColor }: StatCardPro
 }
 
 export default function DashboardPage() {
-  const { user, setCreateCardModalOpen, setDepositModalOpen } = useAppStore();
+  const { user, setCreateCardModalOpen } = useAppStore();
   const [cards, setCards] = useState<Card[]>([]);
   const [pendingRequests, setPendingRequests] = useState<CardRequest[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -254,22 +254,6 @@ export default function DashboardPage() {
 
         {/* Right Sidebar */}
         <div className="space-y-4">
-          {/* Account Balance */}
-          <div className="p-6 rounded-2xl bg-gradient-to-br from-green-500/10 to-emerald-500/10 border border-green-500/20">
-            <h3 className="font-semibold text-white mb-2">Account Balance</h3>
-            <p className="text-3xl font-bold text-green-400">${(user?.balance || 0).toFixed(2)}</p>
-            <p className="text-sm text-gray-400 mt-2">
-              Deposit funds to create cards and top them up
-            </p>
-            <button
-              onClick={() => setDepositModalOpen(true)}
-              className="w-full mt-4 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-green-500 text-white hover:bg-green-600 transition-colors"
-            >
-              <TrendingUp className="h-4 w-4" />
-              Deposit Funds
-            </button>
-          </div>
-
           {/* Quick Actions */}
           <div className="p-6 rounded-2xl bg-gray-900 border border-gray-800">
             <h3 className="font-semibold text-white mb-4">Quick Actions</h3>
@@ -280,14 +264,6 @@ export default function DashboardPage() {
               >
                 <CreditCard className="h-5 w-5 text-green-400" />
                 <span>Create New Card</span>
-                <ArrowUpRight className="h-4 w-4 ml-auto text-gray-500" />
-              </button>
-              <button
-                onClick={() => setDepositModalOpen(true)}
-                className="w-full flex items-center gap-3 p-3 rounded-xl bg-gray-800/50 hover:bg-gray-800 text-white transition-colors"
-              >
-                <Wallet className="h-5 w-5 text-blue-400" />
-                <span>Deposit Funds</span>
                 <ArrowUpRight className="h-4 w-4 ml-auto text-gray-500" />
               </button>
               <Link
