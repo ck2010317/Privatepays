@@ -48,23 +48,33 @@ function extractMemoFromTx(tx: HeliusTransaction): string | null {
 
 export async function POST(request: NextRequest) {
   try {
-    // Verify authentication header
+    // Verify authentication header from Helius
     const authHeader = request.headers.get('x-helius-secret');
-    const expectedSecret = process.env.HELIUS_WEBHOOK_SECRET || 'test-secret';
+    const expectedSecret = process.env.HELIUS_WEBHOOK_SECRET;
 
-    if (authHeader !== expectedSecret) {
-      console.error('Invalid webhook secret');
+    console.log('=== HELIUS WEBHOOK RECEIVED ===');
+    console.log('Auth header received:', authHeader ? 'present' : 'missing');
+    console.log('Expected secret configured:', expectedSecret ? 'yes' : 'no');
+
+    // Verify auth if secret is configured
+    if (expectedSecret && authHeader !== expectedSecret) {
+      console.error('Webhook auth failed - invalid secret');
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
       );
     }
 
-    const payload: HeliusWebhookPayload = await request.json();
+    const payload = await request.json();
     console.log('Helius webhook received:', {
       webhookID: payload.webhookID,
-      transactionCount: payload.transactions.length,
+      transactionCount: payload.transactions?.length || 0,
     });
+
+    if (!payload.transactions || payload.transactions.length === 0) {
+      console.log('No transactions in webhook payload');
+      return NextResponse.json({ success: true, message: 'No transactions' });
+    }
 
     const mainWallet = '6aGvR36EkR4wB57xN8JvMAR3nikzYoYwxbBKJTJYD3jy';
 
