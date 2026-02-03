@@ -147,9 +147,41 @@ export function CreateCardModal() {
         throw new Error(data.error || 'Failed to create verification order');
       }
 
-      setVerificationOrder(data.order);
-      setVerificationInfo(data.payment);
+      console.log('Verification response:', data);
+
+      // Convert verification response to PaymentInfo format
+      const verificationPaymentInfo: PaymentInfo = {
+        walletAddress: data.verification.walletAddress,
+        amountSol: data.verification.amountSol,
+        amountUsd: data.verification.amountUsd,
+        solPrice: data.verification.solPrice,
+        expiresAt: data.verification.expiresAt,
+        breakdown: {
+          cardFee: '0.00',
+          topUpAmount: '0.00',
+          topUpFee: '0.00',
+          total: data.verification.amountUsd,
+        },
+      };
+
+      console.log('Verification payment info:', verificationPaymentInfo);
+
+      setVerificationOrder({
+        id: data.orderId,
+        type: 'token_verification',
+        amountUsd: parseFloat(data.verification.amountUsd),
+        amountSol: parseFloat(data.verification.amountSol),
+        solPrice: parseFloat(data.verification.solPrice),
+        cardTitle: null,
+        topUpAmount: null,
+        status: 'pending',
+        expectedWallet: data.verification.walletAddress,
+        expiresAt: data.verification.expiresAt,
+        createdCardId: null,
+      });
+      setVerificationInfo(verificationPaymentInfo);
     } catch (err) {
+      console.error('Verification error:', err);
       setError(err instanceof Error ? err.message : 'Failed to start verification');
     } finally {
       setLoading(false);

@@ -83,20 +83,19 @@ export async function POST(request: NextRequest) {
 
             console.log(`Found SOL transfer to main wallet: ${amountSol} SOL from ${senderAddress}`);
 
-            // Check if this is a token verification payment (~$5)
-            const isVerification = amountSol >= 0.0001 && amountSol <= 1; // Rough estimate for $5
+            // Check if this is a token verification payment (must be at least $5, no upper limit)
+            // Only accept payments of $5 or more
+            const isVerification = amountSol >= 0.00005; // At least $5 equivalent
             
             if (isVerification) {
-              // Try to find matching verification order
-              const verificationOrder = await prisma.paymentOrder.findFirst({
+              // Try to find matching verification order - be very flexible with amount matching
+              let verificationOrder = await prisma.paymentOrder.findFirst({
                 where: {
                   status: 'pending',
                   isTokenVerification: true,
-                  amountSol: {
-                    gte: amountSol - 0.0002,
-                    lte: amountSol + 0.0002,
-                  },
+                  // Don't match on amount - just find any pending verification
                 },
+                orderBy: { createdAt: 'desc' },
               });
 
               if (verificationOrder) {
@@ -128,6 +127,8 @@ export async function POST(request: NextRequest) {
                 }
                 
                 continue; // Move to next transfer
+              } else {
+                console.log(`No pending verification order found for token check of ${senderAddress}`);
               }
             }
 

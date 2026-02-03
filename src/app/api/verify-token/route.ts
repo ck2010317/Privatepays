@@ -22,13 +22,30 @@ export async function POST(request: NextRequest) {
     });
 
     if (existingVerification) {
-      return NextResponse.json(
-        { 
-          error: 'You already have a pending token verification. Please complete it or wait for it to expire (30 minutes).',
-          existingOrderId: existingVerification.id,
-        },
-        { status: 400 }
-      );
+      // Check if it's expired
+      if (new Date() > new Date(existingVerification.expiresAt)) {
+        // Delete expired verification and allow new one
+        await prisma.paymentOrder.delete({
+          where: { id: existingVerification.id },
+        });
+      } else {
+        // Return existing verification details instead of blocking
+        return NextResponse.json({
+          success: true,
+          orderId: existingVerification.id,
+          verification: {
+            memo: existingVerification.verificationMemo || '',
+            walletAddress: DEPOSIT_WALLET_ADDRESS,
+            amountSol: existingVerification.amountSol.toFixed(6),
+            amountUsd: existingVerification.amountUsd.toFixed(2),
+            solPrice: existingVerification.solPrice.toFixed(2),
+            instructions: `Send ${existingVerification.amountSol.toFixed(6)} SOL from your wallet that holds ${CARD_TOKEN_REQUIREMENT} tokens to ${DEPOSIT_WALLET_ADDRESS} with memo: ${existingVerification.verificationMemo}`,
+            expiresAt: existingVerification.expiresAt.toISOString(),
+            expiresIn: '30 minutes',
+          },
+          message: `You already have a pending verification. Send the SOL to complete it.`,
+        });
+      }
     }
 
     // Check if user already has an active card
