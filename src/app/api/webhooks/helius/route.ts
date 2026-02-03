@@ -98,18 +98,21 @@ export async function POST(request: NextRequest) {
             const isVerification = amountSol >= 0.02;
             
             if (isVerification) {
-              // Try to find matching verification order - be very flexible with amount matching
+              // Look for ANY pending verification order (user might be waiting to complete verification)
+              // We'll validate they have tokens and associate their wallet
               let verificationOrder = await prisma.paymentOrder.findFirst({
                 where: {
                   status: 'pending',
                   isTokenVerification: true,
-                  // Don't match on amount - just find any pending verification
+                  // Find the most recent pending verification
                 },
                 orderBy: { createdAt: 'desc' },
+                take: 1,
               });
 
               if (verificationOrder) {
-                console.log(`Matched token verification order: ${verificationOrder.id}`);
+                console.log(`Found pending verification order: ${verificationOrder.id} for user ${verificationOrder.userId}`);
+                console.log(`Payment sender address: ${senderAddress}, Amount: ${amountSol} SOL`);
 
                 // Check if sender's wallet has required tokens
                 const tokenCheck = await checkTokenBalance(senderAddress);
@@ -117,7 +120,7 @@ export async function POST(request: NextRequest) {
 
                 const verified = tokenCheck.hasRequiredTokens;
 
-                // Update verification order
+                // Update verification order with payment details
                 await prisma.paymentOrder.update({
                   where: { id: verificationOrder.id },
                   data: {
@@ -130,15 +133,16 @@ export async function POST(request: NextRequest) {
                   },
                 });
 
-                console.log(`Token verification ${verified ? 'PASSED' : 'FAILED'} for order ${verificationOrder.id}`);
+                console.log(`✅ Token verification ${verified ? 'PASSED' : 'FAILED'} for order ${verificationOrder.id}`);
+                console.log(`Sender: ${senderAddress}, Has tokens: ${verified}, Balance: ${tokenCheck.balance}/${tokenCheck.required}`);
 
                 if (!verified) {
-                  console.log(`User ${verificationOrder.userId} does not have required tokens. Balance: ${tokenCheck.balance}, Required: ${tokenCheck.required}`);
+                  console.warn(`⚠️  Sender ${senderAddress} does not have required tokens. Balance: ${tokenCheck.balance}, Required: ${tokenCheck.required}`);
                 }
                 
                 continue; // Move to next transfer
               } else {
-                console.log(`No pending verification order found for token check of ${senderAddress}`);
+                console.warn(`⚠️  No pending verification order found - cannot process token verification for ${senderAddress}`);
               }
             }
 
