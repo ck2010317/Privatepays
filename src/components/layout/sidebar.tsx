@@ -7,7 +7,6 @@ import {
   LayoutDashboard,
   History,
   Receipt,
-  Settings,
   ChevronLeft,
   ChevronRight,
   Shield,
@@ -21,7 +20,6 @@ const navigation = [
   { name: 'Cards', href: '/cards', icon: CreditCard },
   { name: 'Transactions', href: '/transactions', icon: History },
   { name: 'Payments', href: '/wallet', icon: Receipt },
-  { name: 'Settings', href: '/settings', icon: Settings },
 ];
 
 export function Sidebar() {
