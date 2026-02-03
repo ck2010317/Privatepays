@@ -12,26 +12,26 @@ export async function GET(request: NextRequest) {
       activeUsers,
       totalCards,
       pendingCardRequests,
-      pendingDeposits,
-      pendingTopUps,
-      totalDepositsValue,
+      totalPaymentOrders,
+      completedPaymentOrders,
+      totalPaymentValue,
       settings,
     ] = await Promise.all([
       prisma.user.count(),
       prisma.user.count({ where: { isActive: true, role: 'user' } }),
       prisma.card.count(),
       prisma.cardRequest.count({ where: { status: 'pending' } }),
-      prisma.deposit.count({ where: { status: 'pending' } }),
-      prisma.topUpRequest.count({ where: { status: 'pending' } }),
-      prisma.deposit.aggregate({
-        where: { status: 'confirmed' },
-        _sum: { amount: true },
+      prisma.paymentOrder.count(),
+      prisma.paymentOrder.count({ where: { status: 'completed' } }),
+      prisma.paymentOrder.aggregate({
+        where: { status: 'completed' },
+        _sum: { amountUsd: true },
       }),
       prisma.settings.findUnique({ where: { id: 'settings' } }),
     ]);
 
-    // Get recent activity
-    const recentDeposits = await prisma.deposit.findMany({
+    // Get recent payment orders
+    const recentPayments = await prisma.paymentOrder.findMany({
       take: 5,
       orderBy: { createdAt: 'desc' },
       include: {
@@ -53,14 +53,13 @@ export async function GET(request: NextRequest) {
         activeUsers,
         totalCards,
         pendingCardRequests,
-        pendingDeposits,
-        pendingTopUps,
-        totalPending: pendingCardRequests + pendingDeposits + pendingTopUps,
-        totalDepositsValue: totalDepositsValue._sum.amount || 0,
+        totalPaymentOrders,
+        completedPaymentOrders,
+        totalPaymentValue: totalPaymentValue._sum.amountUsd || 0,
       },
       settings,
       recentActivity: {
-        deposits: recentDeposits,
+        payments: recentPayments,
         cardRequests: recentCardRequests,
       },
     });
