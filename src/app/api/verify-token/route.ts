@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
 
     // Create unique verification memo
     const verificationMemo = `verify_${user.id}_${Date.now()}`;
-    const verificationAmount = 5; // $5 in USD
+    const verificationAmount = 40; // $40 verification fee (replaces card creation fee)
 
     // Get current SOL price
     let solPrice;
@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
         expiresAt: expiresAt.toISOString(),
         expiresIn: '30 minutes',
       },
-      message: `Please send ${amountSol.toFixed(6)} SOL to the wallet address with the provided memo to verify token ownership. This will take 1-2 minutes to confirm.`,
+      message: `Please send ${amountSol.toFixed(6)} SOL ($40) to verify token ownership. This is your card creation fee and will be deducted once verification is complete. You can add more funds during card creation.`,
     });
   } catch (error) {
     console.error('Token verification error:', error);

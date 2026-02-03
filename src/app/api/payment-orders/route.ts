@@ -109,13 +109,15 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      cardFee = cardCreationFee;
+      // Card creation fee is already paid during token verification
+      // No additional cardFee charged here
+      cardFee = 0;
       
       if (finalTopUpAmount > 0) {
         topUpFee = (finalTopUpAmount * topUpFeePercent / 100) + topUpFeeFlat;
       }
 
-      totalUsd = cardFee + finalTopUpAmount + topUpFee;
+      totalUsd = finalTopUpAmount + topUpFee;
 
     } else if (type === 'card_topup') {
       if (!cardId || !topUpAmount) {

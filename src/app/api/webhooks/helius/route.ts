@@ -83,8 +83,8 @@ export async function POST(request: NextRequest) {
 
             console.log(`Found SOL transfer to main wallet: ${amountSol} SOL from ${senderAddress}`);
 
-            // Check if this is a token verification payment (~$5 = ~0.001-0.002 SOL depending on price)
-            const isVerification = amountSol >= 0.0001 && amountSol <= 1; // Rough estimate for $5
+            // Check if this is a token verification payment (~$40)
+            const isVerification = amountSol >= 0.0001 && amountSol <= 2; // Rough estimate for $40
             
             if (isVerification) {
               // Try to find matching verification order
