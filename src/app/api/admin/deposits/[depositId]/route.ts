@@ -10,8 +10,6 @@ export async function POST(
   try {
     const admin = await requireAdmin(request);
     const { depositId } = await params;
-    const body = await request.json();
-    const { action, confirmedAmount } = body; // action: 'confirm' or 'reject'
 
     const deposit = await prisma.deposit.findUnique({
       where: { id: depositId },
@@ -22,32 +20,20 @@ export async function POST(
       return NextResponse.json({ error: 'Deposit not found' }, { status: 404 });
     }
 
-    if (deposit.status !== 'pending') {
-      return NextResponse.json(
-        { error: 'Deposit already processed' },
-        { status: 400 }
-      );
+    // Deposits are deprecated - use payment-orders instead
+    return NextResponse.json({ 
+      error: 'Deposits are deprecated. Users now pay directly with SOL via payment orders.',
+      note: 'Check payment-orders API instead'
+    }, { status: 410 });
+  } catch (error) {
+    console.error('Deposit error:', error);
+    const message = error instanceof Error ? error.message : 'Failed to process deposit';
+    if (message === 'Unauthorized') {
+      return NextResponse.json({ error: message }, { status: 401 });
     }
-
-    if (action === 'confirm') {
-      const amount = confirmedAmount || deposit.amount;
-
-      // Update user balance
-      await prisma.user.update({
-        where: { id: deposit.userId },
-        data: { balance: { increment: amount } },
-      });
-
-      // Update deposit
-      await prisma.deposit.update({
-        where: { id: depositId },
-        data: {
-          status: 'confirmed',
-          amount: amount,
-          confirmedBy: admin.id,
-          confirmedAt: new Date(),
-        },
-      });
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
 
       // Update transaction
       await prisma.transaction.updateMany({
