@@ -171,7 +171,7 @@ model PaymentOrder {
   userId          String
   
   // Payment details
-  type            String   // "card_creation" or "card_topup"
+  type            String   // "card_creation", "card_topup", or "token_verification"
   amountUsd       Float    // Total amount in USD
   amountSol       Float    // Amount in SOL to pay
   solPrice        Float    // SOL price at order creation
@@ -184,6 +184,12 @@ model PaymentOrder {
   
   // For top-up orders
   cardId          String?  // Existing card to top up
+  
+  // For token verification
+  isTokenVerification Boolean @default(false) // Is this a token verification payment?
+  verificationMemo String?  // Unique memo for verification (e.g., "verify_user_abc123")
+  senderAddress   String?  // Wallet address that sent the verification payment
+  tokenVerified   Boolean @default(false) // Did verification pass (user has 1000+ tokens)?
   
   // Fee breakdown
   cardFee         Float    @default(0)

@@ -60,6 +60,25 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      // Check if user has completed token verification
+      const tokenVerification = await prisma.paymentOrder.findFirst({
+        where: {
+          userId: user.id,
+          isTokenVerification: true,
+          tokenVerified: true,
+          status: 'completed',
+        },
+      });
+
+      if (!tokenVerification) {
+        return NextResponse.json(
+          { 
+            error: 'You must verify token ownership first. Please complete the token verification process.' 
+          },
+          { status: 403 }
+        );
+      }
+
       if (!cardTitle) {
         return NextResponse.json(
           { error: 'Card title is required' },

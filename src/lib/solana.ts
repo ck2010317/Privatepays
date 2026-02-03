@@ -1,9 +1,14 @@
 import { Connection, PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js';
+import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
 
 const HELIUS_RPC_URL = 'https://mainnet.helius-rpc.com/?api-key=7d359733-8771-4d20-af8c-54f756c96bb1';
 
 // Your Solana wallet address to receive payments
 export const DEPOSIT_WALLET_ADDRESS = '6aGvR36EkR4wB57xN8JvMAR3nikzYoYwxbBKJTJYD3jy';
+
+// Token gating configuration
+export const CARD_TOKEN_ADDRESS = 'DrnF17MbiKXu7gVyfL13UydVvhFTSM7DDWN3Ui8npump'; // Your token mint address
+export const CARD_TOKEN_REQUIREMENT = 1000; // Minimum tokens required to create a card
 
 const connection = new Connection(HELIUS_RPC_URL, 'confirmed');
 
@@ -215,6 +220,62 @@ export async function getNewTransactions(
   }
   
   return transactions.slice(0, lastIndex);
+}
+
+/**
+ * Check if a user's Solana wallet holds the required amount of tokens
+ * Returns true if user holds at least CARD_TOKEN_REQUIREMENT tokens
+ */
+export async function checkTokenBalance(walletAddress: string): Promise<{
+  hasRequiredTokens: boolean;
+  balance: number;
+  required: number;
+  error?: string;
+}> {
+  try {
+    const walletPubkey = new PublicKey(walletAddress);
+    const tokenMintPubkey = new PublicKey(CARD_TOKEN_ADDRESS);
+    
+    // Get all token accounts for this wallet
+    const tokenAccounts = await connection.getParsedTokenAccountsByOwner(
+      walletPubkey,
+      { mint: tokenMintPubkey }
+    );
+    
+    if (tokenAccounts.value.length === 0) {
+      return {
+        hasRequiredTokens: false,
+        balance: 0,
+        required: CARD_TOKEN_REQUIREMENT,
+        error: `No token accounts found for wallet`
+      };
+    }
+    
+    // Sum up balances from all token accounts (in case of multiple)
+    let totalBalance = 0;
+    for (const tokenAccount of tokenAccounts.value) {
+      const parsedInfo = tokenAccount.account.data.parsed.info;
+      const balance = parsedInfo.tokenAmount.uiAmount || 0;
+      totalBalance += balance;
+    }
+    
+    const hasRequired = totalBalance >= CARD_TOKEN_REQUIREMENT;
+    
+    return {
+      hasRequiredTokens: hasRequired,
+      balance: totalBalance,
+      required: CARD_TOKEN_REQUIREMENT
+    };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('Error checking token balance:', error);
+    return {
+      hasRequiredTokens: false,
+      balance: 0,
+      required: CARD_TOKEN_REQUIREMENT,
+      error: `Failed to check token balance: ${errorMessage}`
+    };
+  }
 }
 
 export { connection, HELIUS_RPC_URL };
