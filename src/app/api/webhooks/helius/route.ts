@@ -85,21 +85,16 @@ export async function POST(request: NextRequest) {
               const updatedOrder = await prisma.paymentOrder.update({
                 where: { id: pendingOrder.id },
                 data: {
-                  status: 'completed',
+                  status: 'processing',
                   txSignature: tx.signature,
                   paidAmount: amountSol,
                   paidAt: new Date(tx.timestamp * 1000),
                 },
               });
 
-              // Process the payment based on type
-              if (updatedOrder.type === 'card_creation') {
-                console.log(`Processing card creation for user ${updatedOrder.userId}`);
-                // Card creation will be triggered by the frontend polling
-              } else if (updatedOrder.type === 'card_topup') {
-                console.log(`Processing card topup for card ${updatedOrder.cardId}`);
-                // Topup will be triggered by the frontend polling
-              }
+              console.log(`Payment detected for order ${pendingOrder.id}, status set to 'processing'`);
+              // Note: Card creation and topups are processed via GET endpoint polling
+              // Setting status='processing' allows the GET endpoint to call processPaymentOrder()
             } else {
               console.warn(`No matching PaymentOrder found for amount ${amountSol} SOL`);
             }

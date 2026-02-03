@@ -144,8 +144,8 @@ async function processPaymentOrder(orderId: string, userId: string) {
       try {
         const result = await zeroidApi.createCard({
           title: order.cardTitle || 'My Card',
-          email: user.email,
-          phone_number: user.phone || '+10000000000',
+          email: order.email || user.email,
+          phone_number: order.phoneNumber || user.phone || '+10000000000',
           card_commission_id: '5',
           currency_id: 'usdt',
         });
