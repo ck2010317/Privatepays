@@ -134,7 +134,7 @@ export async function POST(request: NextRequest) {
 
 /**
  * GET /api/verify-token?orderId=...
- * Check verification status
+ * Check verification status and verify transaction if payment was sent
  */
 export async function GET(request: NextRequest) {
   try {
@@ -167,7 +167,61 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Determine verification result
+    // If order is still pending, check recent transactions to the wallet
+    if (order.status === 'pending' && !order.txSignature) {
+      console.log(`Polling for payment to order ${orderId}...`);
+      
+      const { getRecentTransactions } = await import('@/lib/solana');
+      const recentTxs = await getRecentTransactions(order.expectedWallet || DEPOSIT_WALLET_ADDRESS, 5);
+      
+      // Look for a transaction that matches the expected amount (within 0.001 SOL tolerance)
+      const matchingTx = recentTxs.find(tx => 
+        Math.abs(tx.amount - order.amountSol) < 0.001 && 
+        tx.status !== 'failed'
+      );
+      
+      if (matchingTx) {
+        console.log(`Found matching transaction for order ${orderId}: ${matchingTx.signature}`);
+        
+        // Check token balance for the sender
+        const { checkTokenBalance } = await import('@/lib/solana');
+        const tokenCheck = await checkTokenBalance(matchingTx.from);
+        const verified = tokenCheck.hasRequiredTokens;
+        
+        // Update order with the transaction details
+        const updatedOrder = await prisma.paymentOrder.update({
+          where: { id: orderId },
+          data: {
+            status: verified ? 'completed' : 'failed',
+            txSignature: matchingTx.signature,
+            senderAddress: matchingTx.from,
+            tokenVerified: verified,
+            paidAmount: matchingTx.amount,
+            paidAt: new Date(matchingTx.blockTime ? matchingTx.blockTime * 1000 : Date.now()),
+          },
+        });
+        
+        console.log(`Token verification ${verified ? 'PASSED' : 'FAILED'} for order ${orderId}`);
+        
+        return NextResponse.json({
+          orderId: updatedOrder.id,
+          status: updatedOrder.status,
+          verified: verified && updatedOrder.status === 'completed',
+          tokenVerified: updatedOrder.tokenVerified,
+          senderAddress: updatedOrder.senderAddress,
+          createdAt: updatedOrder.createdAt,
+          expiresAt: updatedOrder.expiresAt,
+          message: 
+            verified && updatedOrder.status === 'completed'
+              ? '✅ Token verification successful! You can now create a card.'
+              : updatedOrder.status === 'failed'
+              ? '❌ Verification failed. You do not have enough tokens.'
+              : '⏳ Waiting for payment confirmation...',
+        });
+      }
+    }
+
+    // Return current order status
     const isCompleted = order.status === 'completed';
     const isVerified = isCompleted && order.tokenVerified === true;
     const isFailed = order.status === 'failed' || (isCompleted && !order.tokenVerified);
@@ -175,7 +229,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       orderId: order.id,
       status: order.status,
-      verified: isVerified, // true if fully verified and completed
+      verified: isVerified,
       tokenVerified: order.tokenVerified,
       senderAddress: order.senderAddress,
       createdAt: order.createdAt,
