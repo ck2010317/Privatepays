@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PrivatePay Card Design Preview</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+            min-height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        
+        .glow-top-right {
+            position: absolute;
+            top: -50px;
+            right: -50px;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(167, 139, 250, 0.2) 0%, transparent 70%);
+            border-radius: 50%;
+            filter: blur(60px);
+            z-index: 1;
+        }
+        
+        .glow-bottom-left {
+            position: absolute;
+            bottom: -50px;
+            left: -50px;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(147, 51, 234, 0.2) 0%, transparent 70%);
+            border-radius: 50%;
+            filter: blur(60px);
+            z-index: 1;
+        }
+        
+        .credit-card {
+            aspect-ratio: 1.586 / 1;
+            background: linear-gradient(135deg, #1f2937 0%, #111827 50%, #0f0f0f 100%);
+            border-radius: 24px;
+            padding: 32px;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid #374151;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+        
+        .copy-btn {
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        
+        .copy-btn:hover {
+            background: rgba(55, 65, 81, 0.7);
+        }
+        
+        .copy-btn.copied {
+            color: #4ade80;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            border: 1px solid;
+        }
+        
+        .status-active {
+            background: rgba(16, 185, 129, 0.1);
+            color: #4ade80;
+            border-color: rgba(16, 185, 129, 0.3);
+        }
+        
+        .status-frozen {
+            background: rgba(59, 130, 246, 0.1);
+            color: #60a5fa;
+            border-color: rgba(59, 130, 246, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="min-h-screen flex items-center justify-center p-4">
+        <div class="w-full max-w-2xl">
+            <!-- TITLE -->
+            <div class="mb-12 text-center">
+                <h1 class="text-4xl font-bold text-white mb-2">PrivatePay Card Design</h1>
+                <p class="text-gray-400">User Card Template Preview</p>
+            </div>
+
+            <!-- DASHBOARD CARD PREVIEW -->
+            <div class="mb-16">
+                <h2 class="text-2xl font-bold text-white mb-6">1. Dashboard Card (Grid View)</h2>
+                
+                <div class="bg-gray-800/30 rounded-2xl p-6 border border-gray-700">
+                    <!-- Card Container -->
+                    <div class="credit-card">
+                        <div class="glow-top-right"></div>
+                        <div class="glow-bottom-left"></div>
+                        
+                        <div class="relative z-10 h-full flex flex-col justify-between">
+                            <!-- Header -->
+                            <div class="flex items-start justify-between">
+                                <div>
+                                    <p class="text-sm text-gray-400 mb-1">My Shopping Card</p>
+                                    <span class="status-badge status-active">ACTIVE</span>
+                                </div>
+                                <svg class="w-8 h-8 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                                </svg>
+                            </div>
+
+                            <!-- Card Number -->
+                            <div>
+                                <p class="text-xs text-gray-500 uppercase tracking-wider mb-2">Card Number</p>
+                                <p class="font-mono text-2xl text-white tracking-widest">•••• •••• •••• 4206</p>
+                            </div>
+
+                            <!-- Footer -->
+                            <div class="flex items-end justify-between">
+                                <div class="flex gap-8">
+                                    <div>
+                                        <p class="text-xs text-gray-500 uppercase tracking-wider mb-1">Expiry</p>
+                                        <p class="font-mono text-lg text-white">••/••</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-gray-500 uppercase tracking-wider mb-1">CVV</p>
+                                        <p class="font-mono text-lg text-white">•••</p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-xs text-gray-500 uppercase tracking-wider mb-1">Balance</p>
+                                    <p class="text-xl font-bold text-white">$500.00</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Buttons -->
+                    <div class="flex gap-3 mt-4">
+                        <button class="flex-1 h-10 rounded-xl bg-gradient-to-r from-violet-500 to-purple-600 text-white text-sm hover:from-violet-600 hover:to-purple-700 transition-all font-medium">
+                            View Full Details
+                        </button>
+                        <button class="h-10 px-4 rounded-xl bg-blue-500/10 border border-blue-500/30 text-blue-400 text-sm hover:bg-blue-500/20">
+                            Freeze
+                        </button>
+                        <button class="h-10 px-4 rounded-xl bg-violet-500/10 border border-violet-500/30 text-violet-400 text-sm hover:bg-violet-500/20">
+                            Top Up
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MODAL CARD PREVIEW -->
+            <div class="mb-16">
+                <h2 class="text-2xl font-bold text-white mb-6">2. Card Details Modal (Full View)</h2>
+                
+                <div class="bg-gray-900 rounded-2xl border border-gray-800 shadow-2xl overflow-hidden">
+                    <!-- Modal Header -->
+                    <div class="flex items-center justify-between p-6 border-b border-gray-800">
+                        <h3 class="text-2xl font-bold text-white">My Shopping Card</h3>
+                        <button class="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <!-- Modal Content -->
+                    <div class="p-6 space-y-6">
+                        <!-- Large Card Display -->
+                        <div class="credit-card">
+                            <div class="glow-top-right"></div>
+                            <div class="glow-bottom-left"></div>
+                            
+                            <div class="relative z-10 h-full flex flex-col justify-between">
+                                <!-- Header -->
+                                <div class="flex items-start justify-between">
+                                    <div>
+                                        <p class="text-sm text-gray-400 mb-2">Card Title</p>
+                                        <h4 class="text-3xl font-bold text-white">My Shopping Card</h4>
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="text-sm text-gray-400 mb-1">Status</p>
+                                        <span class="status-badge status-active">ACTIVE</span>
+                                    </div>
+                                </div>
+
+                                <!-- Card Number -->
+                                <div>
+                                    <p class="text-xs text-gray-400 uppercase tracking-widest mb-2">Card Number</p>
+                                    <div class="flex items-center justify-between">
+                                        <p class="font-mono text-4xl text-white tracking-widest font-semibold">4206 5678 9012 3456</p>
+                                        <button class="p-2 rounded-lg bg-gray-800/50 hover:bg-gray-700 transition-colors copy-btn">
+                                            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Footer -->
+                                <div class="flex items-end justify-between">
+                                    <div class="flex gap-12">
+                                        <div>
+                                            <p class="text-xs text-gray-400 uppercase tracking-widest mb-2">Expiry Date</p>
+                                            <div class="flex items-center gap-2">
+                                                <p class="font-mono text-3xl text-white">12/28</p>
+                                                <button class="p-2 rounded-lg bg-gray-800/50 hover:bg-gray-700 copy-btn">
+                                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <p class="text-xs text-gray-400 uppercase tracking-widest mb-2">CVV</p>
+                                            <div class="flex items-center gap-2">
+                                                <p class="font-mono text-3xl text-white">456</p>
+                                                <button class="p-2 rounded-lg bg-gray-800/50 hover:bg-gray-700 copy-btn">
+                                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="text-xs text-gray-400 uppercase tracking-widest mb-2">Balance</p>
+                                        <p class="text-4xl font-bold text-green-400">$500.00</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Show Details Button -->
+                        <button class="w-full h-12 rounded-xl bg-gradient-to-r from-violet-500 to-purple-600 text-white font-medium hover:from-violet-600 hover:to-purple-700 transition-all">
+                            👁️ Show Sensitive Data (Full Card Details)
+                        </button>
+
+                        <!-- Detailed Information Grid -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-gray-700">
+                            <div class="bg-gray-800/50 rounded-xl p-4 border border-gray-700">
+                                <p class="text-xs text-gray-400 uppercase tracking-wider mb-2">Full Card Number</p>
+                                <div class="flex items-center justify-between">
+                                    <p class="font-mono text-lg text-white">4206567890123456</p>
+                                    <button class="p-2 rounded-lg bg-gray-700/50 hover:bg-gray-600 copy-btn">
+                                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="bg-gray-800/50 rounded-xl p-4 border border-gray-700">
+                                <p class="text-xs text-gray-400 uppercase tracking-wider mb-2">Expiry Month</p>
+                                <p class="font-mono text-lg text-white">12</p>
+                            </div>
+
+                            <div class="bg-gray-800/50 rounded-xl p-4 border border-gray-700">
+                                <p class="text-xs text-gray-400 uppercase tracking-wider mb-2">Expiry Year</p>
+                                <p class="font-mono text-lg text-white">2028</p>
+                            </div>
+
+                            <div class="bg-gray-800/50 rounded-xl p-4 border border-gray-700">
+                                <p class="text-xs text-gray-400 uppercase tracking-wider mb-2">CVV/CVC</p>
+                                <div class="flex items-center justify-between">
+                                    <p class="font-mono text-lg text-white">456</p>
+                                    <button class="p-2 rounded-lg bg-gray-700/50 hover:bg-gray-600 copy-btn">
+                                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Card Info -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-gray-700">
+                            <div class="bg-gray-800/50 rounded-xl p-4 border border-gray-700">
+                                <p class="text-xs text-gray-400 uppercase tracking-wider mb-2">Card ID</p>
+                                <p class="font-mono text-sm text-white break-all">cuid_abc123xyz789def456</p>
+                            </div>
+
+                            <div class="bg-gray-800/50 rounded-xl p-4 border border-gray-700">
+                                <p class="text-xs text-gray-400 uppercase tracking-wider mb-2">Status</p>
+                                <p class="text-lg font-bold text-green-400">ACTIVE</p>
+                            </div>
+
+                            <div class="bg-gray-800/50 rounded-xl p-4 border border-gray-700">
+                                <p class="text-xs text-gray-400 uppercase tracking-wider mb-2">Current Balance</p>
+                                <p class="text-2xl font-bold text-green-400">$500.00</p>
+                            </div>
+
+                            <div class="bg-gray-800/50 rounded-xl p-4 border border-gray-700">
+                                <p class="text-xs text-gray-400 uppercase tracking-wider mb-2">Currency</p>
+                                <p class="font-mono text-lg text-white">USD</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Modal Footer -->
+                    <div class="border-t border-gray-800 p-4 bg-gray-800/30 flex gap-3">
+                        <button class="flex-1 h-11 rounded-xl bg-gray-800 border border-gray-700 text-white font-medium hover:bg-gray-700">
+                            Close
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- COLOR PALETTE -->
+            <div class="mb-16">
+                <h2 class="text-2xl font-bold text-white mb-6">3. Color Palette</h2>
+                
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="text-center">
+                        <div class="w-full h-24 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 mb-3"></div>
+                        <p class="text-white font-semibold">Primary</p>
+                        <p class="text-gray-400 text-sm">Violet/Purple</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="w-full h-24 rounded-lg bg-green-500 mb-3"></div>
+                        <p class="text-white font-semibold">Success</p>
+                        <p class="text-gray-400 text-sm">Green (Active)</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="w-full h-24 rounded-lg bg-blue-500 mb-3"></div>
+                        <p class="text-white font-semibold">Info</p>
+                        <p class="text-gray-400 text-sm">Blue (Frozen)</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="w-full h-24 rounded-lg bg-gray-700 mb-3"></div>
+                        <p class="text-white font-semibold">Dark</p>
+                        <p class="text-gray-400 text-sm">Background</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FOOTER -->
+            <div class="text-center py-8 border-t border-gray-700">
+                <p class="text-gray-400">PrivatePay Card Design System • 2026</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

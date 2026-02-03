@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PrivatePay Virtual Card Design</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            width: 100%;
+        }
+        
+        .title {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+            font-size: 32px;
+            font-weight: bold;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #9ca3af;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .card-wrapper {
+            perspective: 1000px;
+            cursor: pointer;
+        }
+        
+        .card {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 1.586 / 1;
+            background: linear-gradient(135deg, #1f2937 0%, #111827 50%, #0f0f0f 100%);
+            border-radius: 32px;
+            padding: 40px;
+            overflow: hidden;
+            border: 2px solid #374151;
+            box-shadow: 
+                0 0 100px rgba(167, 139, 250, 0.15),
+                0 20px 60px rgba(0, 0, 0, 0.8);
+            transition: all 0.3s ease;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        
+        .card:hover {
+            border-color: #a78bfa;
+            box-shadow: 
+                0 0 120px rgba(167, 139, 250, 0.25),
+                0 20px 60px rgba(0, 0, 0, 0.8);
+            transform: translateY(-5px);
+        }
+        
+        /* Glowing background elements */
+        .card::before {
+            content: '';
+            position: absolute;
+            top: -100px;
+            right: -100px;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(167, 139, 250, 0.2) 0%, transparent 70%);
+            border-radius: 50%;
+            filter: blur(80px);
+            z-index: 0;
+        }
+        
+        .card::after {
+            content: '';
+            position: absolute;
+            bottom: -80px;
+            left: -80px;
+            width: 350px;
+            height: 350px;
+            background: radial-gradient(circle, rgba(147, 51, 234, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+            filter: blur(80px);
+            z-index: 0;
+        }
+        
+        .card-content {
+            position: relative;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            justify-content: space-between;
+        }
+        
+        .card-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+        
+        .card-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 20px;
+            font-weight: bold;
+            letter-spacing: 3px;
+        }
+        
+        .card-brand svg {
+            width: 32px;
+            height: 32px;
+            filter: drop-shadow(0 0 8px rgba(167, 139, 250, 0.5));
+        }
+        
+        .card-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #10b981;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: #10b981;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+            }
+            50% {
+                opacity: 0.8;
+                box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
+            }
+        }
+        
+        .card-title {
+            font-size: 28px;
+            font-weight: 700;
+            margin-top: 12px;
+            letter-spacing: 0.5px;
+        }
+        
+        .card-chip {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 80px;
+            height: 60px;
+            background: linear-gradient(135deg, #d4af37 0%, #b8941d 100%);
+            border: 2px solid #9d7e0a;
+            border-radius: 12px;
+            gap: 8px;
+            font-size: 32px;
+            font-weight: bold;
+            color: #7a5f08;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+        }
+        
+        .chip-dot {
+            width: 12px;
+            height: 12px;
+            background: #9d7e0a;
+            border-radius: 2px;
+        }
+        
+        .card-number {
+            font-size: 48px;
+            font-weight: 700;
+            letter-spacing: 8px;
+            font-family: 'Courier New', monospace;
+            text-align: center;
+            margin: 20px 0;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .card-bottom {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+        
+        .card-info {
+            display: flex;
+            gap: 32px;
+        }
+        
+        .info-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        
+        .info-label {
+            font-size: 11px;
+            letter-spacing: 2px;
+            color: #9ca3af;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+        
+        .info-value {
+            font-size: 22px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            font-family: 'Courier New', monospace;
+            color: #ffffff;
+        }
+        
+        .card-balance {
+            text-align: right;
+        }
+        
+        .balance-label {
+            font-size: 11px;
+            letter-spacing: 2px;
+            color: #9ca3af;
+            text-transform: uppercase;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        
+        .balance-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #10b981;
+            text-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+        }
+        
+        .card-footer {
+            position: absolute;
+            bottom: 40px;
+            left: 40px;
+            right: 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            color: #6b7280;
+            z-index: 10;
+            border-top: 1px solid rgba(107, 114, 128, 0.2);
+            padding-top: 16px;
+        }
+        
+        .visa-logo {
+            font-size: 24px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            color: #60a5fa;
+        }
+        
+        .card-type {
+            font-size: 11px;
+            color: #9ca3af;
+        }
+        
+        .info-text {
+            margin-top: 40px;
+            text-align: center;
+            color: #9ca3af;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        
+        @media (max-width: 768px) {
+            .card {
+                padding: 30px;
+                border-radius: 24px;
+            }
+            
+            .card-number {
+                font-size: 36px;
+                letter-spacing: 6px;
+            }
+            
+            .card-title {
+                font-size: 20px;
+            }
+            
+            .info-value {
+                font-size: 18px;
+            }
+            
+            .balance-value {
+                font-size: 24px;
+            }
+            
+            .card-footer {
+                bottom: 30px;
+                left: 30px;
+                right: 30px;
+                font-size: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="title">PrivatePay Virtual Card</div>
+        <div class="subtitle">Hover over the card to see the effect</div>
+        
+        <div class="card-wrapper">
+            <div class="card">
+                <div class="card-content">
+                    <!-- Top Section -->
+                    <div class="card-top">
+                        <div>
+                            <div class="card-brand">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                </svg>
+                                PRIVATEPAY
+                            </div>
+                            <div class="card-title">My Shopping Card</div>
+                        </div>
+                        <div class="card-status">
+                            <span class="status-dot"></span>
+                            ACTIVE
+                        </div>
+                    </div>
+                    
+                    <!-- Chip -->
+                    <div style="display: flex; justify-content: center;">
+                        <div class="card-chip">
+                            <span class="chip-dot"></span>
+                            <span class="chip-dot"></span>
+                            <span class="chip-dot"></span>
+                            <span class="chip-dot"></span>
+                        </div>
+                    </div>
+                    
+                    <!-- Card Number -->
+                    <div class="card-number">4206 5678 9012 3456</div>
+                    
+                    <!-- Bottom Section -->
+                    <div class="card-bottom">
+                        <div class="card-info">
+                            <div class="info-group">
+                                <div class="info-label">Cardholder</div>
+                                <div class="info-value">Your Name</div>
+                            </div>
+                            <div class="info-group">
+                                <div class="info-label">Valid Thru</div>
+                                <div class="info-value">12/28</div>
+                            </div>
+                        </div>
+                        <div class="card-balance">
+                            <div class="balance-label">Balance</div>
+                            <div class="balance-value">$500.00</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Footer -->
+                <div class="card-footer">
+                    <div class="visa-logo">VISA</div>
+                    <div class="card-type">Digital Card</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="info-text">
+            ✨ This is the card users will see after payment<br>
+            💳 Click "View Full Details" to reveal card number, CVV & expiry date<br>
+            🔐 All sensitive data is masked by default for security
+        </div>
+    </div>
+</body>
+</html>

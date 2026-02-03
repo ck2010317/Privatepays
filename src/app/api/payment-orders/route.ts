@@ -43,6 +43,23 @@ export async function POST(request: NextRequest) {
     let finalTopUpAmount = 0;
 
     if (type === 'card_creation') {
+      // Check if user already has an active card
+      const existingCard = await prisma.card.findFirst({
+        where: {
+          userId: user.id,
+          status: { in: ['active', 'processing', 'pending'] },
+        },
+      });
+
+      if (existingCard) {
+        return NextResponse.json(
+          { 
+            error: 'You already have an active card. You can only have one card at a time. Use the top-up feature to add funds to your existing card.' 
+          },
+          { status: 400 }
+        );
+      }
+
       if (!cardTitle) {
         return NextResponse.json(
           { error: 'Card title is required' },
