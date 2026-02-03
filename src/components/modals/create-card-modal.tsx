@@ -177,7 +177,7 @@ export function CreateCardModal() {
     setPaymentOrder(null);
     setPaymentInfo(null);
     setCreatedCard(null);
-    setFormData({ title: '', amount: '50' });
+    setFormData({ title: '', email: '', phoneNumber: '', amount: '50' });
   };
 
   if (!createCardModalOpen) return null;
