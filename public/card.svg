@@ -1,0 +1,62 @@
+<svg viewBox="0 0 800 504" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#1f2937;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#111827;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0f0f0f;stop-opacity:1" />
+    </linearGradient>
+    
+    <filter id="glow1">
+      <feGaussianBlur stdDeviation="60" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="800" height="504" fill="url(#bgGradient)"/>
+  
+  <!-- Glow effect top-right -->
+  <circle cx="750" cy="80" r="150" fill="#a78bfa" opacity="0.15" filter="url(#glow1)"/>
+  
+  <!-- Glow effect bottom-left -->
+  <circle cx="100" cy="450" r="150" fill="#9333ea" opacity="0.15" filter="url(#glow1)"/>
+  
+  <!-- Card border -->
+  <rect x="8" y="8" width="784" height="488" rx="24" fill="none" stroke="#4b5563" stroke-width="2"/>
+  
+  <!-- Card title -->
+  <text x="40" y="70" font-family="Arial, sans-serif" font-size="48" font-weight="bold" fill="white">My Shopping Card</text>
+  
+  <!-- Status badge -->
+  <text x="620" y="70" font-family="Arial, sans-serif" font-size="28" fill="#10b981">● ACTIVE</text>
+  
+  <!-- Card number -->
+  <text x="40" y="200" font-family="Courier New, monospace" font-size="62" font-weight="bold" fill="white" letter-spacing="6">4206  5678  9012  3456</text>
+  
+  <!-- Expiry label -->
+  <text x="40" y="285" font-family="Arial, sans-serif" font-size="16" fill="#9ca3af" text-transform="uppercase">Valid Thru</text>
+  
+  <!-- Expiry date -->
+  <text x="40" y="330" font-family="Courier New, monospace" font-size="48" font-weight="bold" fill="white">12/28</text>
+  
+  <!-- CVV label -->
+  <text x="620" y="285" font-family="Arial, sans-serif" font-size="16" fill="#9ca3af" text-transform="uppercase">CVV</text>
+  
+  <!-- CVV -->
+  <text x="620" y="330" font-family="Courier New, monospace" font-size="48" font-weight="bold" fill="white">456</text>
+  
+  <!-- Balance label -->
+  <text x="550" y="380" font-family="Arial, sans-serif" font-size="16" fill="#9ca3af">Balance</text>
+  
+  <!-- Balance amount (green) -->
+  <text x="550" y="440" font-family="Arial, sans-serif" font-size="52" font-weight="bold" fill="#10b981">$500.00</text>
+  
+  <!-- Visa logo area -->
+  <text x="40" y="470" font-family="Arial, sans-serif" font-size="28" fill="white">💳 VISA</text>
+  
+  <!-- Chip -->
+  <rect x="700" y="430" width="60" height="50" rx="4" fill="none" stroke="white" stroke-width="2"/>
+</svg>
