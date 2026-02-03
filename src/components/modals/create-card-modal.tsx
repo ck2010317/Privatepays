@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { X, Loader2, CreditCard, AlertCircle, Check, Copy, Clock } from 'lucide-react';
+import { X, Loader2, CreditCard, AlertCircle, Check, Copy, Clock, Shield } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
 import { cn } from '@/lib/utils';
 import { QRCodeSVG } from 'qrcode.react';
@@ -43,13 +43,20 @@ interface CardDetails {
 
 export function CreateCardModal() {
   const { createCardModalOpen, setCreateCardModalOpen } = useAppStore();
-  const [step, setStep] = useState<'form' | 'payment' | 'success'>('form');
+  const [step, setStep] = useState<'verification' | 'form' | 'payment' | 'success'>('verification');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [cardFee, setCardFee] = useState(40);
+  const [cardFee, setCardFee] = useState(0);
   const [topUpFeePercent, setTopUpFeePercent] = useState(2.5);
   const [topUpFeeFlat, setTopUpFeeFlat] = useState(2);
   const [copied, setCopied] = useState(false);
+
+  // Verification state
+  const [verificationOrder, setVerificationOrder] = useState<PaymentOrder | null>(null);
+  const [verificationInfo, setVerificationInfo] = useState<PaymentInfo | null>(null);
+  const [tokenVerified, setTokenVerified] = useState(false);
+  const [verificationTimeLeft, setVerificationTimeLeft] = useState<number>(0);
+  const [verificationChecking, setVerificationChecking] = useState(false);
 
   // Payment state
   const [paymentOrder, setPaymentOrder] = useState<PaymentOrder | null>(null);
@@ -65,13 +72,19 @@ export function CreateCardModal() {
     amount: '50',
   });
 
+  // Check verification status on modal open
+  useEffect(() => {
+    if (createCardModalOpen) {
+      checkVerificationStatus();
+    }
+  }, [createCardModalOpen]);
+
   // Fetch settings
   useEffect(() => {
     if (createCardModalOpen) {
       fetch('/api/user/settings')
         .then(res => res.json())
         .then(data => {
-          if (data.cardCreationFee) setCardFee(data.cardCreationFee);
           if (data.topUpFeePercent) setTopUpFeePercent(data.topUpFeePercent);
           if (data.topUpFeeFlat) setTopUpFeeFlat(data.topUpFeeFlat);
         })
@@ -79,7 +92,26 @@ export function CreateCardModal() {
     }
   }, [createCardModalOpen]);
 
-  // Countdown timer
+  // Countdown timer for verification
+  useEffect(() => {
+    if (verificationInfo && step === 'verification') {
+      const interval = setInterval(() => {
+        const expiry = new Date(verificationInfo.expiresAt).getTime();
+        const now = Date.now();
+        const diff = Math.max(0, Math.floor((expiry - now) / 1000));
+        setVerificationTimeLeft(diff);
+
+        if (diff === 0) {
+          setError('Verification time expired. Please start over.');
+          clearInterval(interval);
+        }
+      }, 1000);
+
+      return () => clearInterval(interval);
+    }
+  }, [verificationInfo, step]);
+
+  // Countdown timer for payment
   useEffect(() => {
     if (paymentInfo && step === 'payment') {
       const interval = setInterval(() => {
@@ -97,6 +129,64 @@ export function CreateCardModal() {
       return () => clearInterval(interval);
     }
   }, [paymentInfo, step]);
+
+  // Start token verification
+  const startVerification = async () => {
+    setError('');
+    setLoading(true);
+
+    try {
+      const res = await fetch('/api/verify-token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to create verification order');
+      }
+
+      setVerificationOrder(data.order);
+      setVerificationInfo(data.payment);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to start verification');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Check verification status
+  const checkVerificationStatus = useCallback(async () => {
+    if (verificationOrder && verificationOrder.id) {
+      setVerificationChecking(true);
+      try {
+        const res = await fetch(`/api/verify-token?orderId=${verificationOrder.id}`);
+        const data = await res.json();
+
+        if (data.verified === true && data.tokenVerified === true) {
+          setTokenVerified(true);
+          setStep('form');
+          setVerificationOrder(null);
+          setVerificationInfo(null);
+        } else if (data.verified === false) {
+          setError('Token verification failed. You do not have enough tokens. Please check your wallet.');
+        }
+      } catch (err) {
+        console.error('Check verification error:', err);
+      } finally {
+        setVerificationChecking(false);
+      }
+    }
+  }, [verificationOrder]);
+
+  // Poll for verification every 3 seconds
+  useEffect(() => {
+    if (step === 'verification' && verificationOrder && verificationTimeLeft > 0) {
+      const interval = setInterval(checkVerificationStatus, 3000);
+      return () => clearInterval(interval);
+    }
+  }, [step, verificationOrder, verificationTimeLeft, checkVerificationStatus]);
 
   // Check payment status periodically
   const checkPaymentStatus = useCallback(async () => {
@@ -173,7 +263,10 @@ export function CreateCardModal() {
   const handleClose = () => {
     setCreateCardModalOpen(false);
     setError('');
-    setStep('form');
+    setStep('verification');
+    setVerificationOrder(null);
+    setVerificationInfo(null);
+    setTokenVerified(false);
     setPaymentOrder(null);
     setPaymentInfo(null);
     setCreatedCard(null);
@@ -184,7 +277,7 @@ export function CreateCardModal() {
 
   const amount = parseFloat(formData.amount) || 0;
   const topUpFee = amount > 0 ? (amount * topUpFeePercent / 100) + topUpFeeFlat : 0;
-  const totalUsd = cardFee + amount + topUpFee;
+  const totalUsd = amount + topUpFee;
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -201,6 +294,7 @@ export function CreateCardModal() {
       <div className="relative w-full max-w-md bg-gray-900 rounded-2xl border border-gray-800 shadow-xl max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-6 border-b border-gray-800">
           <h2 className="text-xl font-semibold text-white">
+            {step === 'verification' && 'Verify Token Ownership'}
             {step === 'form' && 'Create New Card'}
             {step === 'payment' && 'Complete Payment'}
             {step === 'success' && 'Card Created!'}
@@ -214,6 +308,136 @@ export function CreateCardModal() {
         </div>
 
         <div className="p-6">
+          {/* Verification State */}
+          {step === 'verification' && !tokenVerified && (
+            <div className="space-y-4">
+              {error && (
+                <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                  {error}
+                </div>
+              )}
+
+              {!verificationInfo && (
+                <div className="text-center py-6">
+                  <div className="w-16 h-16 bg-violet-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Shield className="w-8 h-8 text-violet-400" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-white mb-3">Verify Token Ownership</h3>
+                  <p className="text-gray-400 mb-6 text-sm">
+                    To create a card, you must own at least <strong>1000 tokens</strong> of <code className="bg-gray-800 px-2 py-1 rounded text-xs text-violet-300">DrnF17MbiKXu7gVyfL13UydVvhFTSM7DDWN3Ui8npump</code>
+                  </p>
+                  
+                  <div className="p-4 rounded-xl bg-violet-500/10 border border-violet-500/20 mb-6">
+                    <p className="text-sm text-violet-300 mb-2">
+                      💡 <strong>How it works:</strong>
+                    </p>
+                    <ul className="text-xs text-gray-400 space-y-1 text-left">
+                      <li>• Send $5 SOL to verify your wallet</li>
+                      <li>• We check if you hold 1000+ tokens</li>
+                      <li>• Once verified, you can create your card</li>
+                    </ul>
+                  </div>
+
+                  <button
+                    onClick={startVerification}
+                    disabled={loading}
+                    className={cn(
+                      'w-full h-11 rounded-xl bg-gradient-to-r from-violet-500 to-purple-600 text-white font-medium transition-all flex items-center justify-center gap-2',
+                      loading
+                        ? 'opacity-50 cursor-not-allowed'
+                        : 'hover:from-violet-600 hover:to-purple-700 shadow-lg shadow-violet-500/25'
+                    )}
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Starting Verification...
+                      </>
+                    ) : (
+                      <>
+                        <Shield className="h-4 w-4" />
+                        Verify Now ($5)
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
+
+              {verificationInfo && (
+                <div className="space-y-4">
+                  {/* Timer */}
+                  <div className={cn(
+                    "flex items-center justify-center gap-2 p-3 rounded-xl",
+                    verificationTimeLeft < 300 ? "bg-red-500/10 border border-red-500/20" : "bg-yellow-500/10 border border-yellow-500/20"
+                  )}>
+                    <Clock className={cn("h-4 w-4", verificationTimeLeft < 300 ? "text-red-400" : "text-yellow-400")} />
+                    <span className={cn("font-mono font-bold", verificationTimeLeft < 300 ? "text-red-400" : "text-yellow-400")}>
+                      {Math.floor(verificationTimeLeft / 60)}:{(verificationTimeLeft % 60).toString().padStart(2, '0')}
+                    </span>
+                    <span className="text-gray-400 text-sm">remaining</span>
+                  </div>
+
+                  {/* QR Code */}
+                  <div className="flex flex-col items-center p-6 rounded-xl bg-white">
+                    <QRCodeSVG
+                      value={`solana:${verificationInfo.walletAddress}?amount=${verificationInfo.amountSol}`}
+                      size={200}
+                      level="H"
+                    />
+                  </div>
+
+                  {/* Amount to pay */}
+                  <div className="p-4 rounded-xl bg-gradient-to-r from-violet-500/10 to-purple-500/10 border border-violet-500/20">
+                    <p className="text-gray-400 text-sm mb-1">Send exactly</p>
+                    <div className="flex items-center justify-between">
+                      <span className="text-2xl font-bold text-white">{verificationInfo.amountSol} SOL</span>
+                      <span className="text-gray-400">≈ ${verificationInfo.amountUsd}</span>
+                    </div>
+                  </div>
+
+                  {/* Wallet Address */}
+                  <div>
+                    <p className="text-sm text-gray-400 mb-2">To this address:</p>
+                    <div className="flex items-center gap-2 p-3 rounded-xl bg-gray-800 border border-gray-700">
+                      <code className="flex-1 text-xs text-white break-all font-mono">
+                        {verificationInfo.walletAddress}
+                      </code>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(verificationInfo.walletAddress);
+                          setCopied(true);
+                          setTimeout(() => setCopied(false), 2000);
+                        }}
+                        className="p-2 rounded-lg hover:bg-gray-700 transition-colors"
+                      >
+                        {copied ? (
+                          <Check className="h-4 w-4 text-green-400" />
+                        ) : (
+                          <Copy className="h-4 w-4 text-gray-400" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Checking status */}
+                  <div className="flex items-center justify-center gap-2 text-gray-400">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span className="text-sm">Waiting for payment...</span>
+                  </div>
+
+                  <button
+                    onClick={checkVerificationStatus}
+                    disabled={verificationChecking}
+                    className="w-full px-4 py-2 rounded-xl bg-gray-800 border border-gray-700 text-white hover:bg-gray-700 transition-colors text-sm"
+                  >
+                    {verificationChecking ? 'Checking...' : "I've sent the payment"}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Success State */}
           {step === 'success' && createdCard && (
             <div className="text-center py-6">
@@ -422,7 +646,7 @@ export function CreateCardModal() {
               <div className="p-4 rounded-xl bg-gray-800/50 border border-gray-700 space-y-2">
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-gray-400">Card Creation Fee</span>
-                  <span className="text-white">${cardFee.toFixed(2)}</span>
+                  <span className="text-white">$0.00</span>
                 </div>
                 {amount > 0 && (
                   <>
@@ -438,7 +662,7 @@ export function CreateCardModal() {
                 )}
                 <div className="border-t border-gray-700 pt-2 mt-2 flex items-center justify-between font-semibold">
                   <span className="text-white">Total to Pay</span>
-                  <span className="text-green-400">${totalUsd.toFixed(2)}</span>
+                  <span className="text-green-400">${(amount + topUpFee).toFixed(2)}</span>
                 </div>
               </div>
 
