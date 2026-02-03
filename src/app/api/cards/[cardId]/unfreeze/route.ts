@@ -1,0 +1,16 @@
+import { NextRequest, NextResponse } from 'next/server';
+import zeroidApi from '@/lib/api/zeroid';
+
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ cardId: string }> }
+) {
+  try {
+    const { cardId } = await params;
+    const result = await zeroidApi.unfreezeCard(cardId);
+    return NextResponse.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to unfreeze card';
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}

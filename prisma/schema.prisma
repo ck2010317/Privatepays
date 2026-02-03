@@ -1,0 +1,207 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  password      String
+  name          String?
+  phone         String?
+  role          String   @default("user") // "user" or "admin"
+  balance       Float    @default(0) // User's internal balance (in USD)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  cards         Card[]
+  transactions  Transaction[]
+  deposits      Deposit[]
+  cardRequests  CardRequest[]
+}
+
+model Card {
+  id              String   @id @default(cuid())
+  
+  // User who owns this card
+  userId          String
+  user            User     @relation(fields: [userId], references: [id])
+  
+  // ZeroID card details
+  zeroidCardId    String?  @unique // The actual card_id from ZeroID API
+  title           String
+  status          String   @default("pending") // pending, active, frozen, cancelled
+  balance         Float    @default(0)
+  currency        String   @default("USD")
+  
+  // Card details (stored after creation)
+  lastFour        String?
+  expiryMonth     String?
+  expiryYear      String?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relations
+  transactions    Transaction[]
+  topUpRequests   TopUpRequest[]
+}
+
+model CardRequest {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id])
+  
+  title           String
+  amount          Float    // Initial top-up amount requested
+  currency        String   @default("USD")
+  
+  status          String   @default("pending") // pending, approved, rejected, completed
+  adminNote       String?
+  
+  // Created card reference
+  cardId          String?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model TopUpRequest {
+  id              String   @id @default(cuid())
+  
+  cardId          String
+  card            Card     @relation(fields: [cardId], references: [id])
+  
+  amount          Float
+  currency        String   @default("USD")
+  
+  status          String   @default("pending") // pending, approved, rejected, completed
+  adminNote       String?
+  
+  // ZeroID reference
+  zeroidRefId     String?
+  finalAmount     Float?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Transaction {
+  id              String   @id @default(cuid())
+  
+  userId          String
+  user            User     @relation(fields: [userId], references: [id])
+  
+  cardId          String?
+  card            Card?    @relation(fields: [cardId], references: [id])
+  
+  type            String   // deposit, withdrawal, card_creation, card_topup, fee
+  amount          Float
+  currency        String   @default("USD")
+  
+  status          String   @default("pending") // pending, completed, failed
+  description     String?
+  reference       String?  // External reference (crypto txn hash, etc.)
+  
+  createdAt       DateTime @default(now())
+}
+
+model Deposit {
+  id              String   @id @default(cuid())
+  
+  userId          String
+  user            User     @relation(fields: [userId], references: [id])
+  
+  amountSol       Float    // Amount in SOL
+  amountUsd       Float    // Amount in USD at time of deposit
+  solPrice        Float    // SOL price at time of confirmation
+  
+  status          String   @default("pending") // pending, confirmed, expired, failed
+  
+  // Solana transaction info
+  txSignature     String?  @unique // Solana transaction signature
+  fromWallet      String?  // Sender's wallet address
+  
+  // Auto-detected or manual
+  detectedAt      DateTime?
+  confirmedAt     DateTime?
+  
+  // Expiry for pending deposits
+  expiresAt       DateTime?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Settings {
+  id              String   @id @default("settings")
+  
+  // Fees and commissions
+  cardCreationFee Float    @default(40) // $40 flat fee on card creation
+  topUpFeePercent Float    @default(2.5) // 2.5% fee on top-ups
+  topUpFeeFlat    Float    @default(2) // $2 flat fee on every top-up
+  
+  // Limits
+  minDeposit      Float    @default(10) // Minimum deposit in USD
+  minTopUp        Float    @default(10)
+  maxTopUp        Float    @default(5000)
+  
+  // Solana deposit wallet
+  solanaWallet    String?  // Your Solana wallet address to receive deposits
+  
+  // Admin settings
+  maintenanceMode Boolean  @default(false)
+  
+  updatedAt       DateTime @updatedAt
+}
+
+// Payment order for direct crypto payments (no stored balance)
+model PaymentOrder {
+  id              String   @id @default(cuid())
+  
+  userId          String
+  
+  // Payment details
+  type            String   // "card_creation" or "card_topup"
+  amountUsd       Float    // Total amount in USD
+  amountSol       Float    // Amount in SOL to pay
+  solPrice        Float    // SOL price at order creation
+  
+  // Card creation details
+  cardTitle       String?
+  topUpAmount     Float?   // Initial top-up amount for new card
+  
+  // For top-up orders
+  cardId          String?  // Existing card to top up
+  
+  // Fee breakdown
+  cardFee         Float    @default(0)
+  topUpFee        Float    @default(0)
+  
+  // Payment status
+  status          String   @default("pending") // pending, paid, processing, completed, expired, failed
+  
+  // Blockchain tracking
+  expectedWallet  String   // Wallet address to receive payment
+  txSignature     String?  @unique // Detected payment transaction
+  paidAmount      Float?   // Actual amount paid in SOL
+  paidAt          DateTime?
+  
+  // Created card (after successful payment)
+  createdCardId   String?
+  
+  // Expiry (30 minutes default)
+  expiresAt       DateTime
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
