@@ -23,9 +23,7 @@ const api = axios.create({
 
 // Cards
 export async function fetchCards(skip = 0, limit = 20) {
-  const response = await api.get<{ cards: Card[]; has_more: boolean }>('/cards', {
-    params: { skip, limit },
-  });
+  const response = await api.get<{ cards: Card[] }>('/user/cards');
   return response.data;
 }
 

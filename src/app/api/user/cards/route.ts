@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
 import { requireAuth } from '@/lib/auth';
+import zeroidApi from '@/lib/api/zeroid';
 
 // Get user's cards
 export async function GET(request: NextRequest) {
@@ -12,7 +13,27 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: 'desc' },
     });
 
-    return NextResponse.json({ cards });
+    // Fetch balance from ZeroID for each card
+    const cardsWithBalance = await Promise.all(
+      cards.map(async (card) => {
+        try {
+          if (card.zeroidCardId) {
+            const zeroidCard = await zeroidApi.getCard(card.zeroidCardId);
+            return {
+              ...card,
+              balance: zeroidCard.balance || card.balance,
+              last_four: zeroidCard.last_four,
+            };
+          }
+        } catch (error) {
+          console.error(`Failed to fetch ZeroID card ${card.zeroidCardId}:`, error);
+          // Return card with stored balance if ZeroID fetch fails
+        }
+        return card;
+      })
+    );
+
+    return NextResponse.json({ cards: cardsWithBalance });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to fetch cards';
     if (message === 'Unauthorized') {
