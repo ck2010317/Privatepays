@@ -68,10 +68,13 @@ export async function GET(
           // Skip if transaction is older than order
           if (tx.blockTime && tx.blockTime < orderCreatedTime - 60) continue;
           
+          // Skip if signature is missing
+          if (!tx.signature) continue;
+          
           // Check if amount matches
           if (tx.amount >= minAmount && tx.amount <= maxAmount) {
             // Check if this transaction is already used by another order
-            const existingOrder = await prisma.paymentOrder.findUnique({
+            const existingOrder = await prisma.paymentOrder.findFirst({
               where: { txSignature: tx.signature },
             });
             
