@@ -51,7 +51,7 @@ export async function POST(
         try {
           const result = await zeroidApi.topUpCard(topUpRequest.card.zeroidCardId, {
             amount: topUpRequest.amount,
-            currency_id: 'usdt', // Use your available currency
+            currency_id: 'usdc', // Use USDC
           });
           finalAmount = result.final_amount;
           zeroidRefId = result.reference_id;

@@ -50,7 +50,7 @@ export async function POST(
             email: cardRequest.user.email,
             phone_number: cardRequest.user.phone || '+10000000000',
             card_commission_id: '5',
-            currency_id: 'usdt', // Use your available currency
+            currency_id: 'usdc', // Use USDC
           });
           finalZeroidCardId = result.card_id;
         } catch (apiError) {

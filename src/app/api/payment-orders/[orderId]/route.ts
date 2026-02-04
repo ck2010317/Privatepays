@@ -81,7 +81,7 @@ export async function GET(
             if (existingOrder) continue;
             
             // Found a matching payment!
-            // Update order as paid
+            // Update order as paid (including sender address for token verification)
             await prisma.paymentOrder.update({
               where: { id: orderId },
               data: {
@@ -89,6 +89,7 @@ export async function GET(
                 txSignature: tx.signature,
                 paidAmount: tx.amount,
                 paidAt: new Date(),
+                senderAddress: tx.from, // Capture sender for token verification
               },
             });
 
@@ -249,7 +250,7 @@ async function processPaymentOrder(orderId: string, userId: string) {
         try {
           await zeroidApi.topUpCard(zeroidCardId, {
             amount: order.topUpAmount,
-            currency_id: 'usdt',
+            currency_id: 'usdc',
           });
         } catch (topUpError) {
           console.error('ZeroID top-up error:', topUpError);

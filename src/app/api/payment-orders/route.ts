@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
       // User pays $30 card fee + optional top-up in ONE payment
       // Token verification happens during payment processing
       
-      const cardCreationFee = 30; // Fixed $30 card creation fee
+      cardFee = 30; // Fixed $30 card creation fee
       finalTopUpAmount = topUpAmount || 15; // Default $15 initial top-up
       
       if (finalTopUpAmount < minTopUp) {
@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
       }
 
       topUpFee = (finalTopUpAmount * topUpFeePercent / 100) + topUpFeeFlat;
-      totalUsd = cardCreationFee + finalTopUpAmount + topUpFee;
+      totalUsd = cardFee + finalTopUpAmount + topUpFee;
 
     } else if (type === 'card_topup') {
       if (!cardId || !topUpAmount) {
