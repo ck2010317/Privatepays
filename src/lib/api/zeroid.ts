@@ -163,8 +163,16 @@ class ZeroIDApi {
   }
 
   async getCardSensitive(cardId: string): Promise<CardSensitive> {
-    const response = await this.client.get(`/cards/${cardId}/sensitive`);
-    return response.data.data || response.data;
+    try {
+      const response = await this.client.get(`/cards/${cardId}/sensitive`);
+      console.log(`[ZeroID] Sensitive data response for ${cardId}:`, response.data);
+      const sensitiveData = response.data.data || response.data;
+      console.log(`[ZeroID] Extracted sensitive data:`, sensitiveData);
+      return sensitiveData;
+    } catch (error) {
+      console.error(`[ZeroID] Error fetching sensitive data for ${cardId}:`, error);
+      throw error;
+    }
   }
 
   async createCard(data: CreateCardRequest): Promise<{ card_id: string; message: string }> {

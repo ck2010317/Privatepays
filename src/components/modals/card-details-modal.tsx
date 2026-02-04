@@ -29,10 +29,13 @@ export function CardDetailsModal({ card, isOpen, onClose }: CardDetailsModalProp
     if (!sensitiveData) {
       setLoading(true);
       try {
+        console.log(`[Modal] Fetching sensitive data for cardId: ${cardId}`);
         const data = await fetchCardSensitive(cardId);
+        console.log(`[Modal] Sensitive data received:`, data);
         setSensitiveData(data);
       } catch (error) {
         console.error('Failed to fetch card details:', error);
+        alert('Failed to load card details. Please try again.');
       } finally {
         setLoading(false);
       }
