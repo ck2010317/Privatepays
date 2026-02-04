@@ -240,7 +240,10 @@ async function processPaymentOrder(orderId: string, userId: string) {
           zeroidCardId,
           title: order.cardTitle || 'My Card',
           status: 'active',
-          balance: order.topUpAmount || 0,
+          // Store the NET amount the card will receive (after fees deducted by API)
+          balance: order.topUpAmount && order.topUpFee 
+            ? Math.max(0, order.topUpAmount - order.topUpFee)
+            : order.topUpAmount || 0,
           currency: 'USD',
         },
       });

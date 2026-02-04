@@ -61,11 +61,13 @@ export async function POST(request: NextRequest) {
       }
 
       // NEW UNIFIED FLOW: Card creation with integrated token verification
-      // User pays $30 card fee + optional top-up in ONE payment
-      // Token verification happens during payment processing
+      // User pays $30 card fee + their desired top-up amount
+      // Top-up fees are deducted by ZeroID from the amount loaded on card
+      // Example: User pays $30 (card) + $15 (top-up) = $45 total
+      // Card receives $15 - fees ($15 - 2.5% - $2 = ~$12.38)
       
       cardFee = 30; // Fixed $30 card creation fee
-      finalTopUpAmount = topUpAmount || 15; // Default $15 initial top-up
+      finalTopUpAmount = topUpAmount || 15; // Amount user wants to load
       
       if (finalTopUpAmount < minTopUp) {
         return NextResponse.json(
@@ -74,8 +76,13 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      topUpFee = (finalTopUpAmount * topUpFeePercent / 100) + topUpFeeFlat;
-      totalUsd = cardFee + finalTopUpAmount + topUpFee;
+      // Calculate what the card will actually receive (fees deducted by API)
+      const topUpFeeAmount = (finalTopUpAmount * topUpFeePercent / 100) + topUpFeeFlat;
+      const netCardBalance = finalTopUpAmount - topUpFeeAmount;
+      
+      // Total user pays: card fee + top-up amount (fees are cut by API, not charged extra to user)
+      totalUsd = cardFee + finalTopUpAmount;
+      topUpFee = topUpFeeAmount; // Store for reference but don't add to total
 
     } else if (type === 'card_topup') {
       if (!cardId || !topUpAmount) {
@@ -178,6 +185,10 @@ export async function POST(request: NextRequest) {
           topUpAmount: finalTopUpAmount.toFixed(2),
           topUpFee: topUpFee.toFixed(2),
           total: totalUsd.toFixed(2),
+          // For card creation: show what actually lands on the card after fees
+          ...(type === 'card_creation' && {
+            netCardBalance: Math.max(0, finalTopUpAmount - topUpFee).toFixed(2),
+          }),
         },
       },
     });

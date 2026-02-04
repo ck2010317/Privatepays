@@ -31,6 +31,7 @@ interface PaymentInfo {
     topUpAmount: string;
     topUpFee: string;
     total: string;
+    netCardBalance?: string;
   };
 }
 
@@ -325,14 +326,20 @@ export function CreateCardModal() {
                   <span className="text-white">${CARD_CREATION_FEE.toFixed(2)}</span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-400">Initial Balance</span>
+                  <span className="text-gray-400">Initial Balance to Load</span>
                   <span className="text-white">${amount.toFixed(2)}</span>
                 </div>
                 {topUpFee > 0 && (
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-400">Top-up Fee ({topUpFeePercent}% + ${topUpFeeFlat})</span>
-                    <span className="text-white">${topUpFee.toFixed(2)}</span>
-                  </div>
+                  <>
+                    <div className="flex items-center justify-between text-sm text-orange-400">
+                      <span>Processing Fee ({topUpFeePercent}% + ${topUpFeeFlat})</span>
+                      <span>-${topUpFee.toFixed(2)}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm border-t border-gray-600 pt-2">
+                      <span className="text-gray-300">You&apos;ll Receive on Card</span>
+                      <span className="text-green-400 font-semibold">${(amount - topUpFee).toFixed(2)}</span>
+                    </div>
+                  </>
                 )}
                 <div className="border-t border-gray-700 pt-2 mt-2 flex items-center justify-between font-semibold">
                   <span className="text-white">Total to Pay</span>
@@ -451,13 +458,21 @@ export function CreateCardModal() {
                   <span className="text-white">${paymentInfo.breakdown.topUpAmount}</span>
                 </div>
                 {parseFloat(paymentInfo.breakdown.topUpFee) > 0 && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">Top-up Fee</span>
-                    <span className="text-white">${paymentInfo.breakdown.topUpFee}</span>
-                  </div>
+                  <>
+                    <div className="flex justify-between text-orange-400">
+                      <span>Processing Fee</span>
+                      <span>-${paymentInfo.breakdown.topUpFee}</span>
+                    </div>
+                    {paymentInfo.breakdown.netCardBalance && (
+                      <div className="flex justify-between border-t border-gray-700 pt-2 text-green-400">
+                        <span>You&apos;ll Receive on Card</span>
+                        <span className="font-semibold">${paymentInfo.breakdown.netCardBalance}</span>
+                      </div>
+                    )}
+                  </>
                 )}
                 <div className="border-t border-gray-700 pt-2 mt-2 flex justify-between font-semibold">
-                  <span className="text-white">Total</span>
+                  <span className="text-white">Total to Pay</span>
                   <span className="text-green-400">${paymentInfo.breakdown.total}</span>
                 </div>
                 <div className="flex justify-between text-xs text-gray-500">
