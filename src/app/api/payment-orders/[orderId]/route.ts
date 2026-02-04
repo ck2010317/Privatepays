@@ -149,6 +149,47 @@ async function processPaymentOrder(orderId: string, userId: string) {
         throw new Error('User not found');
       }
 
+      // NEW: Verify token ownership during payment processing
+      const { checkTokenBalance } = await import('@/lib/solana');
+      const senderAddress = order.senderAddress;
+      
+      if (!senderAddress) {
+        throw new Error('Payment sender address not found');
+      }
+
+      console.log(`Verifying token balance for sender: ${senderAddress}`);
+      const tokenCheck = await checkTokenBalance(senderAddress);
+      
+      if (!tokenCheck.hasRequiredTokens) {
+        console.error(`Token verification FAILED: ${senderAddress} has ${tokenCheck.balance} tokens, needs ${tokenCheck.required}`);
+        
+        // Mark order as failed due to failed token verification
+        await prisma.paymentOrder.update({
+          where: { id: orderId },
+          data: { 
+            status: 'failed',
+            tokenVerified: false,
+          },
+        });
+        
+        return NextResponse.json(
+          { 
+            error: 'Token verification failed. Your wallet does not hold the required tokens. Refund will be processed.',
+            tokenBalance: tokenCheck.balance,
+            tokenRequired: tokenCheck.required,
+          },
+          { status: 403 }
+        );
+      }
+
+      console.log(`Token verification PASSED: ${senderAddress} has ${tokenCheck.balance} tokens`);
+      
+      // Update order to mark token as verified
+      await prisma.paymentOrder.update({
+        where: { id: orderId },
+        data: { tokenVerified: true },
+      });
+
       // Create card via ZeroID API
       let zeroidCardId = null;
       try {
@@ -157,7 +198,7 @@ async function processPaymentOrder(orderId: string, userId: string) {
           email: order.email || user.email,
           phone_number: order.phoneNumber || user.phone || '+10000000000',
           card_commission_id: '5',
-          currency_id: 'usdt',
+          currency_id: 'usdc',
         });
         
         const result = await zeroidApi.createCard({

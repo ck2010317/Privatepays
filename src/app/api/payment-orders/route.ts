@@ -60,64 +60,22 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Check if user has completed token verification
-      const tokenVerification = await prisma.paymentOrder.findFirst({
-        where: {
-          userId: user.id,
-          isTokenVerification: true,
-          tokenVerified: true,
-          status: 'completed',
-        },
-      });
-
-      if (!tokenVerification) {
-        return NextResponse.json(
-          { 
-            error: 'You must verify token ownership first. Please complete the token verification process.' 
-          },
-          { status: 403 }
-        );
-      }
-
-      if (!cardTitle) {
-        return NextResponse.json(
-          { error: 'Card title is required' },
-          { status: 400 }
-        );
-      }
-
-      if (!email) {
-        return NextResponse.json(
-          { error: 'Email is required' },
-          { status: 400 }
-        );
-      }
-
-      if (!phoneNumber) {
-        return NextResponse.json(
-          { error: 'Phone number is required' },
-          { status: 400 }
-        );
-      }
-
-      finalTopUpAmount = topUpAmount || 0;
+      // NEW UNIFIED FLOW: Card creation with integrated token verification
+      // User pays $30 card fee + optional top-up in ONE payment
+      // Token verification happens during payment processing
       
-      if (finalTopUpAmount > 0 && finalTopUpAmount < minTopUp) {
+      const cardCreationFee = 30; // Fixed $30 card creation fee
+      finalTopUpAmount = topUpAmount || 15; // Default $15 initial top-up
+      
+      if (finalTopUpAmount < minTopUp) {
         return NextResponse.json(
           { error: `Minimum top-up amount is $${minTopUp}` },
           { status: 400 }
         );
       }
 
-      // Card creation fee is already paid during token verification
-      // No additional cardFee charged here
-      cardFee = 0;
-      
-      if (finalTopUpAmount > 0) {
-        topUpFee = (finalTopUpAmount * topUpFeePercent / 100) + topUpFeeFlat;
-      }
-
-      totalUsd = finalTopUpAmount + topUpFee;
+      topUpFee = (finalTopUpAmount * topUpFeePercent / 100) + topUpFeeFlat;
+      totalUsd = cardCreationFee + finalTopUpAmount + topUpFee;
 
     } else if (type === 'card_topup') {
       if (!cardId || !topUpAmount) {
