@@ -12,10 +12,14 @@ export interface Card {
   phone_number: string;
   status: 'active' | 'frozen' | 'inactive';
   balance?: number;
+  available_balance?: number;
+  card_balance?: number;
+  account_balance?: number;
   currency?: string;
   last_four?: string;
   created_at: string;
   updated_at?: string;
+  [key: string]: any; // Allow other fields from ZeroID
 }
 
 export interface CardSensitive {
@@ -165,9 +169,22 @@ class ZeroIDApi {
   async getCard(cardId: string): Promise<Card> {
     const response = await this.client.get(`/cards/${cardId}`);
     const data = response.data.data || response.data;
-    console.log(`[ZeroID] Raw response for card ${cardId}:`, response.data);
-    console.log(`[ZeroID] Extracted card data:`, data);
-    console.log(`[ZeroID] Card balance field:`, data.balance);
+    console.log(`[ZeroID] Raw response for card ${cardId}:`, JSON.stringify(response.data, null, 2));
+    console.log(`[ZeroID] Extracted card data:`, JSON.stringify(data, null, 2));
+    console.log(`[ZeroID] All keys in response:`, Object.keys(data));
+    
+    // Normalize balance field - try multiple possible field names
+    if (data.balance === undefined) {
+      if (data.available_balance !== undefined) {
+        data.balance = data.available_balance;
+      } else if (data.card_balance !== undefined) {
+        data.balance = data.card_balance;
+      } else if (data.account_balance !== undefined) {
+        data.balance = data.account_balance;
+      }
+    }
+    
+    console.log(`[ZeroID] Final card balance:`, data.balance);
     return data;
   }
 
@@ -255,6 +272,33 @@ class ZeroIDApi {
   }): Promise<DepositAddress> {
     const response = await this.client.get('/wallet/address', { params });
     return response.data;
+  }
+
+  // Account Balance
+  async getBalance(): Promise<{ balance: number; currency: string }> {
+    const response = await this.client.get('/balance');
+    return response.data;
+  }
+
+  // Calculate card balance from transactions
+  async getCardBalanceFromTransactions(cardId: string): Promise<number> {
+    try {
+      const result = await this.getCardTransactions(cardId, { skip: 0, limit: 1000 });
+      const transactions = result.transactions;
+      
+      // Calculate balance by summing up all transactions
+      let totalSpent = 0;
+      transactions.forEach((tx) => {
+        if (tx.status === 'COMPLETED' && tx.billing_amount) {
+          totalSpent += tx.billing_amount;
+        }
+      });
+      
+      return totalSpent;
+    } catch (error) {
+      console.error(`Failed to calculate balance from transactions for card ${cardId}:`, error);
+      return 0;
+    }
   }
 }
 

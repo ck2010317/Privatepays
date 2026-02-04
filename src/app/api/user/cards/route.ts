@@ -20,12 +20,19 @@ export async function GET(request: NextRequest) {
           if (card.zeroidCardId) {
             const zeroidCard = await zeroidApi.getCard(card.zeroidCardId);
             console.log(`[Cards] ZeroID response for ${card.zeroidCardId}:`, zeroidCard);
+            
+            // Get balance from ZeroID - try multiple field names
+            let zeroidBalance = zeroidCard.balance;
+            if (zeroidBalance === undefined) {
+              zeroidBalance = zeroidCard.available_balance ?? zeroidCard.card_balance ?? zeroidCard.account_balance;
+            }
+            
             return {
               ...card,
               last_four: zeroidCard.last_four || card.lastFour,
               status: zeroidCard.status || card.status,
               // Get balance from ZeroID - this is the live balance
-              balance: zeroidCard.balance !== undefined ? zeroidCard.balance : card.balance,
+              balance: zeroidBalance !== undefined ? zeroidBalance : card.balance,
             };
           }
         } catch (error) {
