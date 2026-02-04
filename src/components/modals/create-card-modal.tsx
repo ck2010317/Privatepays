@@ -118,7 +118,7 @@ export function CreateCardModal() {
       } else if (data.order?.status === 'failed') {
         // Check if it failed due to token verification
         if (data.error?.includes('Token verification failed') || data.tokenBalance !== undefined) {
-          setFailureReason(`Your wallet does not hold the required 1000 tokens. Balance: ${data.tokenBalance || 0}`);
+          setFailureReason(`Your wallet does not hold the required 10000000 tokens. Balance: ${data.tokenBalance || 0}`);
         } else {
           setFailureReason(data.error || 'Payment processing failed. Please contact support.');
         }
@@ -252,7 +252,7 @@ export function CreateCardModal() {
                   <span className="text-sm font-medium text-violet-300">Token Requirement</span>
                 </div>
                 <p className="text-xs text-gray-400">
-                  You must hold at least <strong className="text-white">1000 tokens</strong> of{' '}
+                  You must hold at least <strong className="text-white">10000000 tokens</strong> of{' '}
                   <code className="bg-gray-800 px-1 rounded text-violet-300">DrnF17MbiKXu7gVyfL13UydVvhFTSM7DDWN3Ui8npump</code>{' '}
                   in the wallet you send payment from. Token ownership is verified when payment is received.
                 </p>
@@ -405,7 +405,7 @@ export function CreateCardModal() {
               {/* Important notice */}
               <div className="p-3 rounded-xl bg-violet-500/10 border border-violet-500/20">
                 <p className="text-xs text-violet-300">
-                  ⚠️ <strong>Important:</strong> Send from a wallet holding 1000+ tokens. Your token balance will be verified when payment is received.
+                  ⚠️ <strong>Important:</strong> Send from a wallet holding 10000000+ tokens. Your token balance will be verified when payment is received.
                 </p>
               </div>
 
@@ -544,7 +544,7 @@ export function CreateCardModal() {
                   <strong>What to do:</strong>
                 </p>
                 <ul className="text-xs text-gray-400 mt-2 space-y-1">
-                  <li>• Make sure your wallet holds at least 1000 tokens</li>
+                  <li>• Make sure your wallet holds at least 10000000 tokens</li>
                   <li>• Contact support for a refund if you believe this is an error</li>
                   <li>• Try again after acquiring the required tokens</li>
                 </ul>

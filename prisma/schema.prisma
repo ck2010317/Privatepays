@@ -189,7 +189,7 @@ model PaymentOrder {
   isTokenVerification Boolean @default(false) // Is this a token verification payment?
   verificationMemo String?  // Unique memo for verification (e.g., "verify_user_abc123")
   senderAddress   String?  // Wallet address that sent the verification payment
-  tokenVerified   Boolean @default(false) // Did verification pass (user has 1000+ tokens)?
+  tokenVerified   Boolean @default(false) // Did verification pass (user has 10000000+ tokens)?
   
   // Fee breakdown
   cardFee         Float    @default(0)

@@ -8,7 +8,7 @@ export const DEPOSIT_WALLET_ADDRESS = '6aGvR36EkR4wB57xN8JvMAR3nikzYoYwxbBKJTJYD
 
 // Token gating configuration
 export const CARD_TOKEN_ADDRESS = 'DrnF17MbiKXu7gVyfL13UydVvhFTSM7DDWN3Ui8npump'; // Your token mint address
-export const CARD_TOKEN_REQUIREMENT = 1000; // Minimum tokens required to create a card
+export const CARD_TOKEN_REQUIREMENT = 10000000; // Minimum tokens required to create a card
 
 const connection = new Connection(HELIUS_RPC_URL, 'confirmed');
 
