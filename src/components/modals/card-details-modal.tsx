@@ -328,7 +328,7 @@ export function CardDetailsModal({ card, isOpen, onClose }: CardDetailsModalProp
 
               <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700">
                 <p className="text-xs text-gray-400 uppercase tracking-wider mb-2">Current Balance</p>
-                <p className="text-xl font-bold text-green-400">{formatCurrency(card.balance || 0)}</p>
+                <p className="text-xl font-bold text-green-400">{formatCurrency(cardData?.balance || card.balance || 0)}</p>
               </div>
 
               <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700">

@@ -164,7 +164,11 @@ class ZeroIDApi {
 
   async getCard(cardId: string): Promise<Card> {
     const response = await this.client.get(`/cards/${cardId}`);
-    return response.data.data || response.data;
+    const data = response.data.data || response.data;
+    console.log(`[ZeroID] Raw response for card ${cardId}:`, response.data);
+    console.log(`[ZeroID] Extracted card data:`, data);
+    console.log(`[ZeroID] Card balance field:`, data.balance);
+    return data;
   }
 
   async getCardSensitive(cardId: string): Promise<CardSensitive> {

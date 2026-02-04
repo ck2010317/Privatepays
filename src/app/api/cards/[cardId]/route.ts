@@ -22,6 +22,12 @@ export async function GET(
     }
     
     const card = await zeroidApi.getCard(zeroidCardId);
+    console.log('[API] Card from ZeroID:', {
+      cardId,
+      zeroidCardId,
+      card,
+      balance: card.balance,
+    });
     return NextResponse.json(card);
   } catch (error) {
     console.error('Fetch card error:', error);

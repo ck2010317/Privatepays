@@ -24,8 +24,8 @@ export async function GET(request: NextRequest) {
               ...card,
               last_four: zeroidCard.last_four || card.lastFour,
               status: zeroidCard.status || card.status,
-              // Keep database balance - it's updated when top-ups are made
-              balance: card.balance,
+              // Get balance from ZeroID - this is the live balance
+              balance: zeroidCard.balance !== undefined ? zeroidCard.balance : card.balance,
             };
           }
         } catch (error) {
