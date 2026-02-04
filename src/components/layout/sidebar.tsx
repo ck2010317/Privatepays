@@ -32,16 +32,33 @@ export function Sidebar() {
   // Fetch card balance from first card
   useEffect(() => {
     const fetchCardBalance = async () => {
-      if (cards && cards.length > 0) {
-        try {
+      try {
+        // If we have cards in store, use the first one
+        if (cards && cards.length > 0) {
           const card = cards[0];
           const cardId = card.card_id || card.id;
+          console.log('[Sidebar] Fetching balance for card:', cardId);
           const res = await fetch(`/api/cards/${cardId}`);
           const data = await res.json();
+          console.log('[Sidebar] Card balance from ZeroID:', data.balance);
           setCardBalance(data.balance || 0);
-        } catch (error) {
-          console.error('Failed to fetch card balance:', error);
+        } else {
+          // If no cards in store, fetch them directly
+          console.log('[Sidebar] No cards in store, fetching cards...');
+          const res = await fetch('/api/user/cards');
+          const response = await res.json();
+          if (response.cards && response.cards.length > 0) {
+            const firstCard = response.cards[0];
+            const cardId = firstCard.card_id || firstCard.id;
+            console.log('[Sidebar] Fetching balance for first card:', cardId);
+            const cardRes = await fetch(`/api/cards/${cardId}`);
+            const cardData = await cardRes.json();
+            console.log('[Sidebar] Card balance from ZeroID:', cardData.balance);
+            setCardBalance(cardData.balance || 0);
+          }
         }
+      } catch (error) {
+        console.error('[Sidebar] Failed to fetch card balance:', error);
       }
     };
 
