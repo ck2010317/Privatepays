@@ -13,27 +13,30 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: 'desc' },
     });
 
-    // Fetch balance from ZeroID for each card
-    const cardsWithBalance = await Promise.all(
+    // Fetch additional details from ZeroID for each card (last_four, status)
+    const cardsWithDetails = await Promise.all(
       cards.map(async (card) => {
         try {
           if (card.zeroidCardId) {
             const zeroidCard = await zeroidApi.getCard(card.zeroidCardId);
+            console.log(`[Cards] ZeroID response for ${card.zeroidCardId}:`, zeroidCard);
             return {
               ...card,
-              balance: zeroidCard.balance || card.balance,
-              last_four: zeroidCard.last_four,
+              last_four: zeroidCard.last_four || card.lastFour,
+              status: zeroidCard.status || card.status,
+              // Keep database balance - it's updated when top-ups are made
+              balance: card.balance,
             };
           }
         } catch (error) {
           console.error(`Failed to fetch ZeroID card ${card.zeroidCardId}:`, error);
-          // Return card with stored balance if ZeroID fetch fails
+          // Return card with stored data if ZeroID fetch fails
         }
         return card;
       })
     );
 
-    return NextResponse.json({ cards: cardsWithBalance });
+    return NextResponse.json({ cards: cardsWithDetails });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to fetch cards';
     if (message === 'Unauthorized') {
