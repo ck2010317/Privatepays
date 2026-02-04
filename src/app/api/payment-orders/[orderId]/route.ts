@@ -51,28 +51,41 @@ export async function GET(
     // Check for payment on blockchain
     if (order.status === 'pending') {
       try {
+        console.log(`Checking payment for order ${orderId}, expected amount: ${order.amountSol} SOL`);
         const transactions = await getRecentTransactions(order.expectedWallet, 20);
+        console.log(`Found ${transactions.length} recent transactions`);
         
         // Look for a transaction that matches our expected amount (with 5% tolerance)
         const minAmount = order.amountSol * 0.95;
         const maxAmount = order.amountSol * 1.05;
+        console.log(`Looking for amount between ${minAmount} and ${maxAmount} SOL`);
         
         // Find transaction that was sent after order was created and matches amount
         const orderCreatedTime = new Date(order.createdAt).getTime() / 1000;
         
         for (const tx of transactions) {
+          console.log(`Checking tx: ${tx.signature}, amount: ${tx.amount} SOL, time: ${tx.blockTime}`);
+          
           // Skip if transaction is older than order
-          if (tx.blockTime && tx.blockTime < orderCreatedTime - 60) continue;
+          if (tx.blockTime && tx.blockTime < orderCreatedTime - 60) {
+            console.log(`  Skipping - tx too old (${tx.blockTime} < ${orderCreatedTime - 60})`);
+            continue;
+          }
           
           // Check if amount matches
           if (tx.amount >= minAmount && tx.amount <= maxAmount) {
+            console.log(`  Amount MATCHES! Checking if tx already used...`);
             // Check if this transaction is already used by another order
-            const existingOrder = await prisma.paymentOrder.findUnique({
+            const existingOrder = await prisma.paymentOrder.findFirst({
               where: { txSignature: tx.signature },
             });
             
-            if (existingOrder) continue;
+            if (existingOrder) {
+              console.log(`  Tx already used by order ${existingOrder.id}`);
+              continue;
+            }
             
+            console.log(`  Found matching payment! Processing order...`);
             // Found a matching payment!
             // Update order as paid
             await prisma.paymentOrder.update({
