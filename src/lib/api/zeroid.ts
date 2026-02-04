@@ -6,17 +6,27 @@ const API_KEY = process.env.ZEROID_API_KEY || '';
 // Types
 export interface Card {
   id: string;
-  card_id: string;
+  card_id?: string;
   title: string;
   email: string;
-  phone_number: string;
+  phone?: string;
+  phone_number?: string;
   status: 'active' | 'frozen' | 'inactive';
   balance?: number;
   available_balance?: number;
-  card_balance?: number;
-  account_balance?: number;
+  spend_cap?: number;
+  spent_amount?: number;
   currency?: string;
   last_four?: string;
+  last4?: string;
+  form_factor?: string;
+  brand?: string;
+  vendor_id?: string;
+  vendor_card_id?: string;
+  sub_account_id?: string;
+  vendor_sub_account_id?: string;
+  expiration_date?: string;
+  expiration_date_short?: string;
   created_at: string;
   updated_at?: string;
   [key: string]: any; // Allow other fields from ZeroID
@@ -168,23 +178,14 @@ class ZeroIDApi {
 
   async getCard(cardId: string): Promise<Card> {
     const response = await this.client.get(`/cards/${cardId}`);
-    const data = response.data.data || response.data;
+    
+    // ZeroID returns { success: true, card: {...} }
+    let data = response.data.card || response.data.data || response.data;
+    
     console.log(`[ZeroID] Raw response for card ${cardId}:`, JSON.stringify(response.data, null, 2));
     console.log(`[ZeroID] Extracted card data:`, JSON.stringify(data, null, 2));
-    console.log(`[ZeroID] All keys in response:`, Object.keys(data));
+    console.log(`[ZeroID] Card balance:`, data.balance, 'spend_cap:', data.spend_cap, 'spent_amount:', data.spent_amount);
     
-    // Normalize balance field - try multiple possible field names
-    if (data.balance === undefined) {
-      if (data.available_balance !== undefined) {
-        data.balance = data.available_balance;
-      } else if (data.card_balance !== undefined) {
-        data.balance = data.card_balance;
-      } else if (data.account_balance !== undefined) {
-        data.balance = data.account_balance;
-      }
-    }
-    
-    console.log(`[ZeroID] Final card balance:`, data.balance);
     return data;
   }
 
