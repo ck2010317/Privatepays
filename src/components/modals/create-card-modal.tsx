@@ -43,7 +43,7 @@ interface CardDetails {
 
 export function CreateCardModal() {
   const { createCardModalOpen, setCreateCardModalOpen } = useAppStore();
-  const [step, setStep] = useState<'verification' | 'form' | 'payment' | 'success'>('verification');
+  const [step, setStep] = useState<'form' | 'payment' | 'success'>('form');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [cardFee, setCardFee] = useState(0);
@@ -51,12 +51,8 @@ export function CreateCardModal() {
   const [topUpFeeFlat, setTopUpFeeFlat] = useState(2);
   const [copied, setCopied] = useState(false);
 
-  // Verification state
-  const [verificationOrder, setVerificationOrder] = useState<PaymentOrder | null>(null);
-  const [verificationInfo, setVerificationInfo] = useState<PaymentInfo | null>(null);
-  const [tokenVerified, setTokenVerified] = useState(false);
-  const [verificationTimeLeft, setVerificationTimeLeft] = useState<number>(0);
-  const [verificationChecking, setVerificationChecking] = useState(false);
+  // Verification state - REMOVED (integrated into single payment)
+  // Token verification now happens during payment processing
 
   // Payment state
   const [paymentOrder, setPaymentOrder] = useState<PaymentOrder | null>(null);
@@ -69,13 +65,15 @@ export function CreateCardModal() {
     title: '',
     email: '',
     phoneNumber: '',
-    amount: '50',
+    amount: '15', // Default $15 initial top-up
   });
 
-  // Check verification status on modal open
+  // Reset form when modal opens
   useEffect(() => {
     if (createCardModalOpen) {
-      checkVerificationStatus();
+      setStep('form');
+      setFormData({ title: '', email: '', phoneNumber: '', amount: '15' });
+      setError('');
     }
   }, [createCardModalOpen]);
 
@@ -92,26 +90,7 @@ export function CreateCardModal() {
     }
   }, [createCardModalOpen]);
 
-  // Countdown timer for verification
-  useEffect(() => {
-    if (verificationInfo && step === 'verification') {
-      const interval = setInterval(() => {
-        const expiry = new Date(verificationInfo.expiresAt).getTime();
-        const now = Date.now();
-        const diff = Math.max(0, Math.floor((expiry - now) / 1000));
-        setVerificationTimeLeft(diff);
-
-        if (diff === 0) {
-          setError('Verification time expired. Please start over.');
-          clearInterval(interval);
-        }
-      }, 1000);
-
-      return () => clearInterval(interval);
-    }
-  }, [verificationInfo, step]);
-
-  // Countdown timer for payment
+  // Payment countdown timer
   useEffect(() => {
     if (paymentInfo && step === 'payment') {
       const interval = setInterval(() => {
@@ -130,98 +109,6 @@ export function CreateCardModal() {
     }
   }, [paymentInfo, step]);
 
-  // Start token verification
-  const startVerification = async () => {
-    setError('');
-    setLoading(true);
-
-    try {
-      const res = await fetch('/api/verify-token', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to create verification order');
-      }
-
-      console.log('Verification response:', data);
-
-      // Convert verification response to PaymentInfo format
-      const verificationPaymentInfo: PaymentInfo = {
-        walletAddress: data.verification.walletAddress,
-        amountSol: data.verification.amountSol,
-        amountUsd: data.verification.amountUsd,
-        solPrice: data.verification.solPrice,
-        expiresAt: data.verification.expiresAt,
-        breakdown: {
-          cardFee: '0.00',
-          topUpAmount: '0.00',
-          topUpFee: '0.00',
-          total: data.verification.amountUsd,
-        },
-      };
-
-      console.log('Verification payment info:', verificationPaymentInfo);
-
-      setVerificationOrder({
-        id: data.orderId,
-        type: 'token_verification',
-        amountUsd: parseFloat(data.verification.amountUsd),
-        amountSol: parseFloat(data.verification.amountSol),
-        solPrice: parseFloat(data.verification.solPrice),
-        cardTitle: null,
-        topUpAmount: null,
-        status: 'pending',
-        expectedWallet: data.verification.walletAddress,
-        expiresAt: data.verification.expiresAt,
-        createdCardId: null,
-      });
-      setVerificationInfo(verificationPaymentInfo);
-    } catch (err) {
-      console.error('Verification error:', err);
-      setError(err instanceof Error ? err.message : 'Failed to start verification');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Check verification status
-  const checkVerificationStatus = useCallback(async () => {
-    if (verificationOrder && verificationOrder.id) {
-      setVerificationChecking(true);
-      try {
-        const res = await fetch(`/api/verify-token?orderId=${verificationOrder.id}`);
-        const data = await res.json();
-
-        console.log('Verification status check:', data);
-
-        if (data.verified === true) {
-          setTokenVerified(true);
-          setStep('form');
-          setVerificationOrder(null);
-          setVerificationInfo(null);
-        } else if (data.status === 'failed' || (data.status === 'completed' && !data.tokenVerified)) {
-          setError('Token verification failed. You do not have enough tokens. Please check your wallet.');
-        }
-      } catch (err) {
-        console.error('Check verification error:', err);
-      } finally {
-        setVerificationChecking(false);
-      }
-    }
-  }, [verificationOrder]);
-
-  // Poll for verification every 3 seconds
-  useEffect(() => {
-    if (step === 'verification' && verificationOrder && verificationTimeLeft > 0) {
-      const interval = setInterval(checkVerificationStatus, 3000);
-      return () => clearInterval(interval);
-    }
-  }, [step, verificationOrder, verificationTimeLeft, checkVerificationStatus]);
-
   // Check payment status periodically
   const checkPaymentStatus = useCallback(async () => {
     if (!paymentOrder || step !== 'payment' || checking) return;
@@ -235,7 +122,7 @@ export function CreateCardModal() {
         setCreatedCard(data.card);
         setStep('success');
       } else if (data.order?.status === 'failed') {
-        setError('Payment processing failed. Please contact support.');
+        setError(data.error || 'Payment processing failed. Make sure you have the required tokens.');
       } else if (data.order?.status === 'expired') {
         setError('Payment time expired. Please create a new order.');
       }
