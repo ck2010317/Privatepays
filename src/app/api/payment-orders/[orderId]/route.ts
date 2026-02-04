@@ -51,7 +51,11 @@ export async function GET(
     // Check for payment on blockchain
     if (order.status === 'pending') {
       try {
-        const transactions = await getRecentTransactions(order.expectedWallet, 20);
+        // Use expected wallet or fallback to the main deposit wallet
+        const walletToCheck = order.expectedWallet || '6aGvR36EkR4wB57xN8JvMAR3nikzYoYwxbBKJTJYD3jy';
+        console.log(`Checking transactions for order ${orderId} on wallet ${walletToCheck}, expected amount: ${order.amountSol} SOL`);
+        
+        const transactions = await getRecentTransactions(walletToCheck, 20);
         
         // Look for a transaction that matches our expected amount (with 5% tolerance)
         const minAmount = order.amountSol * 0.95;
