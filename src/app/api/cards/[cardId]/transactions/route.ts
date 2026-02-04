@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import prisma from '@/lib/db';
 import zeroidApi from '@/lib/api/zeroid';
 
 export async function GET(
@@ -13,7 +14,19 @@ export async function GET(
     const from_date = searchParams.get('from_date') || undefined;
     const to_date = searchParams.get('to_date') || undefined;
 
-    const result = await zeroidApi.getCardTransactions(cardId, {
+    // First, check if cardId is a database ID or ZeroID ID
+    let zeroidCardId = cardId;
+    
+    // Try to find in database first
+    const dbCard = await prisma.card.findUnique({
+      where: { id: cardId },
+    });
+    
+    if (dbCard?.zeroidCardId) {
+      zeroidCardId = dbCard.zeroidCardId;
+    }
+
+    const result = await zeroidApi.getCardTransactions(zeroidCardId, {
       skip,
       limit,
       from_date,
@@ -21,6 +34,7 @@ export async function GET(
     });
     return NextResponse.json(result);
   } catch (error) {
+    console.error('Fetch card transactions error:', error);
     const message = error instanceof Error ? error.message : 'Failed to fetch transactions';
     return NextResponse.json({ error: message }, { status: 500 });
   }
