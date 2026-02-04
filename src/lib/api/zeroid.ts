@@ -184,7 +184,14 @@ class ZeroIDApi {
     
     console.log(`[ZeroID] Raw response for card ${cardId}:`, JSON.stringify(response.data, null, 2));
     console.log(`[ZeroID] Extracted card data:`, JSON.stringify(data, null, 2));
-    console.log(`[ZeroID] Card balance:`, data.balance, 'spend_cap:', data.spend_cap, 'spent_amount:', data.spent_amount);
+    
+    // Calculate balance if not provided: balance = spend_cap - spent_amount
+    if (data.balance === undefined && data.spend_cap !== undefined && data.spent_amount !== undefined) {
+      data.balance = data.spend_cap - data.spent_amount;
+      console.log(`[ZeroID] Calculated balance: ${data.spend_cap} - ${data.spent_amount} = ${data.balance}`);
+    }
+    
+    console.log(`[ZeroID] Final balance:`, data.balance, 'spend_cap:', data.spend_cap, 'spent_amount:', data.spent_amount);
     
     return data;
   }
