@@ -176,8 +176,12 @@ export function TopUpModal() {
   if (!topUpModalOpen || !selectedCard) return null;
 
   const amount = parseFloat(formData.amount) || 0;
+  // Calculate fee from the amount (fee is deducted from the amount user is paying)
   const topUpFee = (amount * topUpFeePercent / 100) + topUpFeeFlat;
-  const totalUsd = amount + topUpFee;
+  // What will be loaded on card = amount - fee
+  const amountReceivedOnCard = amount - topUpFee;
+  // Total to pay is just the amount (fee is already included in the amount)
+  const totalUsd = amount;
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -300,16 +304,16 @@ export function TopUpModal() {
               {/* Cost Breakdown */}
               <div className="p-4 rounded-xl bg-gray-800/50 border border-gray-700 space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-gray-400">Top-up Amount</span>
+                  <span className="text-gray-400">Amount to Pay</span>
                   <span className="text-white">${paymentInfo.breakdown.topUpAmount}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-400">Fee ({topUpFeePercent}% + ${topUpFeeFlat})</span>
-                  <span className="text-white">${paymentInfo.breakdown.topUpFee}</span>
+                  <span className="text-yellow-400">-${paymentInfo.breakdown.topUpFee}</span>
                 </div>
                 <div className="border-t border-gray-700 pt-2 mt-2 flex justify-between font-semibold">
-                  <span className="text-white">Total</span>
-                  <span className="text-green-400">${paymentInfo.breakdown.total}</span>
+                  <span className="text-white">You'll Receive on Card</span>
+                  <span className="text-green-400">${(parseFloat(paymentInfo.breakdown.topUpAmount) - parseFloat(paymentInfo.breakdown.topUpFee)).toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-xs text-gray-500">
                   <span>SOL Price</span>
@@ -371,19 +375,19 @@ export function TopUpModal() {
               {/* Cost Breakdown */}
               <div className="p-4 rounded-xl bg-gray-800/50 border border-gray-700 space-y-2">
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-400">Top-up Amount</span>
-                  <span className="text-white">${amount.toFixed(2)}</span>
+                  <span className="text-gray-400">Amount to Pay</span>
+                  <span className="text-white font-semibold">${amount.toFixed(2)}</span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-gray-400">Fee ({topUpFeePercent}% + ${topUpFeeFlat})</span>
-                  <span className="text-white">${topUpFee.toFixed(2)}</span>
+                  <span className="text-yellow-400">-${topUpFee.toFixed(2)}</span>
                 </div>
                 <div className="border-t border-gray-700 pt-2 mt-2 flex items-center justify-between font-semibold">
-                  <span className="text-white">Total to Pay</span>
-                  <span className="text-green-400">${totalUsd.toFixed(2)}</span>
+                  <span className="text-white">You'll Receive on Card</span>
+                  <span className="text-green-400">${amountReceivedOnCard.toFixed(2)}</span>
                 </div>
                 <div className="text-xs text-gray-500 pt-2">
-                  New Card Balance: ${((selectedCard.balance || 0) + amount).toFixed(2)}
+                  New Card Balance: ${((selectedCard.balance || 0) + amountReceivedOnCard).toFixed(2)}
                 </div>
               </div>
 
