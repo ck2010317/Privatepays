@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Eye, EyeOff, Copy, Check, Download } from 'lucide-react';
 import { Card, CardSensitive } from '@/lib/api/zeroid';
 import { cn, formatCardNumber, maskCardNumber, formatCurrency } from '@/lib/utils';
@@ -15,10 +15,28 @@ interface CardDetailsModalProps {
 export function CardDetailsModal({ card, isOpen, onClose }: CardDetailsModalProps) {
   const [showSensitive, setShowSensitive] = useState(false);
   const [sensitiveData, setSensitiveData] = useState<CardSensitive | null>(null);
+  const [cardData, setCardData] = useState<Card | null>(null);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
 
   const cardId = card.card_id || card.id;
+
+  // Fetch card details from ZeroID on modal open
+  useEffect(() => {
+    if (isOpen && !cardData) {
+      const fetchCardDetails = async () => {
+        try {
+          const res = await fetch(`/api/cards/${cardId}`);
+          const data = await res.json();
+          console.log('[Modal] Card data from ZeroID:', data);
+          setCardData(data);
+        } catch (error) {
+          console.error('[Modal] Error fetching card data:', error);
+        }
+      };
+      fetchCardDetails();
+    }
+  }, [isOpen, cardId, cardData]);
 
   // Helper to get the correct field from ZeroID response
   const getCardNumber = () => sensitiveData?.card_number || sensitiveData?.pan || '';
@@ -204,7 +222,9 @@ export function CardDetailsModal({ card, isOpen, onClose }: CardDetailsModalProp
                 {/* Balance */}
                 <div className="text-right">
                   <p className="text-xs text-gray-400 uppercase tracking-widest mb-2">Available Balance</p>
-                  <p className="text-3xl font-bold text-green-400">{formatCurrency(card.balance || 0)}</p>
+                  <p className="text-3xl font-bold text-green-400">
+                    {formatCurrency(cardData?.balance || card.balance || 0)}
+                  </p>
                 </div>
               </div>
             </div>
