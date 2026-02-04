@@ -152,6 +152,14 @@ async function processPaymentOrder(orderId: string, userId: string) {
       // Create card via ZeroID API
       let zeroidCardId = null;
       try {
+        console.log('Creating card with ZeroID:', {
+          title: order.cardTitle || 'My Card',
+          email: order.email || user.email,
+          phone_number: order.phoneNumber || user.phone || '+10000000000',
+          card_commission_id: '5',
+          currency_id: 'usdt',
+        });
+        
         const result = await zeroidApi.createCard({
           title: order.cardTitle || 'My Card',
           email: order.email || user.email,
@@ -159,9 +167,16 @@ async function processPaymentOrder(orderId: string, userId: string) {
           card_commission_id: '5',
           currency_id: 'usdt',
         });
+        
+        console.log('ZeroID createCard response:', result);
         zeroidCardId = result.card_id;
       } catch (apiError) {
-        console.error('ZeroID card creation error:', apiError);
+        console.error('ZeroID card creation error - FULL:', apiError);
+        console.error('ZeroID Error details:', {
+          message: apiError instanceof Error ? apiError.message : 'Unknown error',
+          stack: apiError instanceof Error ? apiError.stack : 'No stack',
+        });
+        
         // Mark as failed
         await prisma.paymentOrder.update({
           where: { id: orderId },
@@ -171,6 +186,7 @@ async function processPaymentOrder(orderId: string, userId: string) {
         });
         return NextResponse.json({ 
           error: 'Failed to create card. Payment received. Please contact support.',
+          zeroidError: apiError instanceof Error ? apiError.message : String(apiError),
           order: { ...order, status: 'failed' }
         }, { status: 500 });
       }
