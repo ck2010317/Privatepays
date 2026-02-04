@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
 import {
   CreditCard,
   LayoutDashboard,
@@ -25,7 +26,27 @@ const navigation = [
 export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { sidebarOpen, toggleSidebar, user, setUser } = useAppStore();
+  const { sidebarOpen, toggleSidebar, user, setUser, cards } = useAppStore();
+  const [cardBalance, setCardBalance] = useState<number>(0);
+
+  // Fetch card balance from first card
+  useEffect(() => {
+    const fetchCardBalance = async () => {
+      if (cards && cards.length > 0) {
+        try {
+          const card = cards[0];
+          const cardId = card.card_id || card.id;
+          const res = await fetch(`/api/cards/${cardId}`);
+          const data = await res.json();
+          setCardBalance(data.balance || 0);
+        } catch (error) {
+          console.error('Failed to fetch card balance:', error);
+        }
+      }
+    };
+
+    fetchCardBalance();
+  }, [cards]);
 
   const handleLogout = async () => {
     try {
@@ -101,7 +122,7 @@ export function Sidebar() {
               <div className="rounded-xl bg-gradient-to-br from-green-500/10 to-emerald-500/10 border border-green-500/20 p-4">
                 <p className="text-sm text-gray-400 mb-1">Account Balance</p>
                 <p className="text-xl font-bold text-green-400">
-                  ${(user?.balance || 0).toFixed(2)}
+                  ${(cardBalance || 0).toFixed(2)}
                 </p>
               </div>
               
