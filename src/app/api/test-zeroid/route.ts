@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
       email: email || 'test@example.com',
       phone_number: phone_number || '+10000000000',
       card_commission_id: '5',
-      currency_id: 'usdt',
+      currency_id: 'usdc',
     });
 
     console.log('ZeroID Response:', result);

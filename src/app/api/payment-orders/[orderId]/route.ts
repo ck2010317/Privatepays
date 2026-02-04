@@ -165,7 +165,7 @@ async function processPaymentOrder(orderId: string, userId: string) {
           email: order.email || user.email,
           phone_number: order.phoneNumber || user.phone || '+10000000000',
           card_commission_id: '5',
-          currency_id: 'usdt',
+          currency_id: 'usdc',
         });
         
         console.log('ZeroID createCard response:', result);
@@ -261,7 +261,7 @@ async function processPaymentOrder(orderId: string, userId: string) {
         try {
           await zeroidApi.topUpCard(card.zeroidCardId, {
             amount: order.topUpAmount!,
-            currency_id: 'usdt',
+            currency_id: 'usdc',
           });
         } catch (apiError) {
           console.error('ZeroID top-up error:', apiError);
