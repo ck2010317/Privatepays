@@ -20,6 +20,33 @@ export function CardDetailsModal({ card, isOpen, onClose }: CardDetailsModalProp
 
   const cardId = card.card_id || card.id;
 
+  // Helper to get the correct field from ZeroID response
+  const getCardNumber = () => sensitiveData?.card_number || sensitiveData?.pan || '';
+  const getExpiryDate = () => {
+    if (sensitiveData?.expiry_date) return sensitiveData.expiry_date;
+    if (sensitiveData?.expiry_month && sensitiveData?.expiry_year) {
+      return `${sensitiveData.expiry_month}/${sensitiveData.expiry_year}`;
+    }
+    return '';
+  };
+  const getCVV = () => sensitiveData?.cvv || sensitiveData?.security_code || '';
+  const getExpiryMonth = () => {
+    if (sensitiveData?.expiry_month) return sensitiveData.expiry_month;
+    if (sensitiveData?.expiry_date) {
+      const parts = sensitiveData.expiry_date.split('/');
+      return parts[0] || '';
+    }
+    return '';
+  };
+  const getExpiryYear = () => {
+    if (sensitiveData?.expiry_year) return sensitiveData.expiry_year;
+    if (sensitiveData?.expiry_date) {
+      const parts = sensitiveData.expiry_date.split('/');
+      return parts[1] || '';
+    }
+    return '';
+  };
+
   const handleToggleSensitive = async () => {
     if (showSensitive) {
       setShowSensitive(false);
@@ -106,12 +133,12 @@ export function CardDetailsModal({ card, isOpen, onClose }: CardDetailsModalProp
                 <div className="flex items-center justify-between">
                   <p className="font-mono text-3xl text-white tracking-widest font-semibold">
                     {showSensitive && sensitiveData
-                      ? formatCardNumber(sensitiveData.pan)
+                      ? formatCardNumber(getCardNumber())
                       : maskCardNumber(card.last_four || '')}
                   </p>
                   {showSensitive && sensitiveData && (
                     <button
-                      onClick={() => copyToClipboard(sensitiveData.pan, 'pan')}
+                      onClick={() => copyToClipboard(getCardNumber(), 'pan')}
                       className="p-2 rounded-lg bg-gray-800/50 hover:bg-gray-700 transition-colors"
                     >
                       {copied === 'pan' ? (
@@ -133,12 +160,12 @@ export function CardDetailsModal({ card, isOpen, onClose }: CardDetailsModalProp
                     <div className="flex items-center gap-2">
                       <p className="font-mono text-2xl text-white">
                         {showSensitive && sensitiveData
-                          ? `${sensitiveData.expiry_month}/${sensitiveData.expiry_year}`
+                          ? getExpiryDate()
                           : '••/••'}
                       </p>
                       {showSensitive && sensitiveData && (
                         <button
-                          onClick={() => copyToClipboard(`${sensitiveData.expiry_month}/${sensitiveData.expiry_year}`, 'expiry')}
+                          onClick={() => copyToClipboard(getExpiryDate(), 'expiry')}
                           className="p-1.5 rounded-lg bg-gray-800/50 hover:bg-gray-700 transition-colors"
                         >
                           {copied === 'expiry' ? (
@@ -156,11 +183,11 @@ export function CardDetailsModal({ card, isOpen, onClose }: CardDetailsModalProp
                     <p className="text-xs text-gray-400 uppercase tracking-widest mb-2">CVV</p>
                     <div className="flex items-center gap-2">
                       <p className="font-mono text-2xl text-white">
-                        {showSensitive && sensitiveData ? sensitiveData.cvv : '•••'}
+                        {showSensitive && sensitiveData ? getCVV() : '•••'}
                       </p>
                       {showSensitive && sensitiveData && (
                         <button
-                          onClick={() => copyToClipboard(sensitiveData.cvv, 'cvv')}
+                          onClick={() => copyToClipboard(getCVV(), 'cvv')}
                           className="p-1.5 rounded-lg bg-gray-800/50 hover:bg-gray-700 transition-colors"
                         >
                           {copied === 'cvv' ? (
@@ -214,9 +241,9 @@ export function CardDetailsModal({ card, isOpen, onClose }: CardDetailsModalProp
                 <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700">
                   <p className="text-xs text-gray-400 uppercase tracking-wider mb-2">Full Card Number</p>
                   <div className="flex items-center justify-between">
-                    <p className="font-mono text-lg text-white break-all">{sensitiveData.pan}</p>
+                    <p className="font-mono text-lg text-white break-all">{getCardNumber()}</p>
                     <button
-                      onClick={() => copyToClipboard(sensitiveData.pan, 'full-pan')}
+                      onClick={() => copyToClipboard(getCardNumber(), 'full-pan')}
                       className="p-2 rounded-lg bg-gray-700/50 hover:bg-gray-600 transition-colors flex-shrink-0 ml-2"
                     >
                       {copied === 'full-pan' ? (
@@ -237,16 +264,16 @@ export function CardDetailsModal({ card, isOpen, onClose }: CardDetailsModalProp
                 {/* Expiry Year */}
                 <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700">
                   <p className="text-xs text-gray-400 uppercase tracking-wider mb-2">Expiry Year</p>
-                  <p className="font-mono text-lg text-white">{sensitiveData.expiry_year}</p>
+                  <p className="font-mono text-lg text-white">{getExpiryYear()}</p>
                 </div>
 
                 {/* CVV */}
                 <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700">
                   <p className="text-xs text-gray-400 uppercase tracking-wider mb-2">CVV/CVC</p>
                   <div className="flex items-center justify-between">
-                    <p className="font-mono text-lg text-white">{sensitiveData.cvv}</p>
+                    <p className="font-mono text-lg text-white">{getCVV()}</p>
                     <button
-                      onClick={() => copyToClipboard(sensitiveData.cvv, 'full-cvv')}
+                      onClick={() => copyToClipboard(getCVV(), 'full-cvv')}
                       className="p-2 rounded-lg bg-gray-700/50 hover:bg-gray-600 transition-colors"
                     >
                       {copied === 'full-cvv' ? (

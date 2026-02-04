@@ -19,12 +19,17 @@ export interface Card {
 }
 
 export interface CardSensitive {
-  card_id: string;
-  pan: string;
-  cvv: string;
-  expiry_month: string;
-  expiry_year: string;
-  cardholder_name: string;
+  card_id?: string;
+  card_number?: string;
+  pan?: string;
+  cvv?: string;
+  security_code?: string;
+  expiry_date?: string;
+  expiry_month?: string;
+  expiry_year?: string;
+  cardholder_name?: string;
+  vendor_b2b_key?: string;
+  [key: string]: any; // Allow other fields from ZeroID
 }
 
 export interface CreateCardRequest {
